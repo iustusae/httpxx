@@ -1,19 +1,28 @@
 #pragma once
 #include "../wrapper/net.hh"
+#include "core/router.hh"
 #include <netinet/in.h>
+
+#include <utility>
+namespace httpxx {
 class Server {
 private:
-  int server_fd{};
-  struct sockaddr_in server_address{};
+  httpx::Socket socket{};
+  Router router{};
 
-  void init(in_port_t port, bool reuse) {
-    server_fd = httpx::Socket(AddressFamilies::af_inet, SocketType::stream);
-
-    if (reuse) {
-    }
+public:
+  explicit Server(in_port_t port = 8080) {
+    socket = httpx::Socket(AddressFamilies::af_inet, SocketType::stream,
+                           Protocol::ip);
+    socket.SetSocketOption(SocketOptions::so_reuseaddr, true);
+    socket.Bind(port);
   }
 
-  Server(in_port_t port, bool reuse) { init(port, reuse); }
+  explicit Server(Router router, const in_port_t port = 8080) : Server(port) {
+    this->router = std::move(router);
+  }
+  auto start() const { socket.Listen(router); }
+  auto getSocket() -> httpx::Socket & { return socket; }
+  auto setSocket(const httpx::Socket &socket) { this->socket = socket; }
 };
-
-class ServerBuilder {};
+} // namespace httpxx

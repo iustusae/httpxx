@@ -13,6 +13,5 @@ project(
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/lib/build)
 
 add_executable(server src/main.cc)
-add_compile_options(-fmodules-ts)
 target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 target_link_libraries(server PUBLIC httpxx)

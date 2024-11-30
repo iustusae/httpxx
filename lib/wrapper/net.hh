@@ -1,6 +1,6 @@
-
 #pragma once
-#include "../http/http.hh"
+#include "../core/http_handlers.hh"
+#include "../core/router.hh"
 #include "opts.hh"
 #include <arpa/inet.h>
 #include <atomic>
@@ -190,7 +190,8 @@ public:
     close(client_fd);
   }
 
-  auto Listen(int max_queued_connections = SOMAXCONN) const -> void {
+  auto Listen(const httpxx::Router &router,
+              int max_queued_connections = SOMAXCONN) const -> void {
     std::atomic<int> connection_count{0};
 
     // Set up the initial listen
@@ -252,16 +253,20 @@ public:
       std::clog << "\nclient #" << ++connection_count << "connected\n";
       char buffer[4096];
       bzero(&buffer, 4096);
-      if (read(client_fd, &buffer, 4096) != -1) {
-        std::clog << "[" << connection_count << "]'s request: \n" << buffer;
+      if (read(client_fd, &buffer, 4096) == -1) {
+        close(client_fd);
+        continue;
       }
-
-      std::jthread{Write, client_fd, http::HTTP_200}.detach();
+      std::clog << "[" << connection_count << "]'s request: \n" << buffer;
+      std::jthread{&httpxx::handlers::handle_request,std::move(router), std::move(client_fd),
+                   std::move(buffer)};
     }
   }
 
 public:
-  Socket(AddressFamilies af, SocketType type, Protocol protocol)
+  Socket() = default;
+  Socket(const AddressFamilies af, const SocketType type,
+         const Protocol protocol)
       : _fd(init_socket(af, type, protocol)), _af(af) {
     std::clog << "_fd: " << _fd << std::endl;
   }
