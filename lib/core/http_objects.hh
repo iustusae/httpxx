@@ -36,6 +36,12 @@ struct Request {
         body(body) {}
 
   Request() = default;
+
+  bool requestsFile() const {
+    auto uri = request_line.uri;
+    uri.erase(uri.find_first_of('/'), 1);
+    return uri.find('.') != std::string::npos;
+  }
 };
 
 struct StartLine {
@@ -49,12 +55,31 @@ struct Response {
   std::optional<std::string> response_body{std::nullopt};
 
   std::string toString() const {
-    return std::format("HTTP/{} {} {}\r\n\r\n{} \r\n\r\n{} ",
-                       start_line.http_version,
+    std::ostringstream oss{};
+
+    oss << std::format("HTTP/{} {} {}", start_line.http_version,
                        static_cast<int>(start_line.status_code),
-                       +start_line.status_code, headersToString(hd),
-                       (response_body.has_value() ? *response_body : "<lewl>"));
-  }
+                       +start_line.status_code);
+
+    if (!areEmpty(hd)) {
+      oss << "\n";
+      for (const auto &[k, v] : hd) {
+        if (!v.has_value()) {
+          continue;
+        } else {
+          oss << k << ':' << v.value() << '\n';
+        }
+      }
+
+      oss << "\r\n\r\n";
+    }
+
+    if (response_body.has_value()) {
+      oss << response_body.value();
+    }
+
+    return oss.str();
+  };
 };
 
 } // namespace httpxx

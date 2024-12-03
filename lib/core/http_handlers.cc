@@ -2,6 +2,7 @@
 #include "http_headers.hh"
 #include "http_objects.hh"
 #include <cstring>
+#include <filesystem>
 #include <sstream>
 #include <unistd.h>
 namespace httpxx {
@@ -61,7 +62,8 @@ inline Request createRequest(const char *_request_string) {
   assert(headers.size() == 3);
 
   rl.method = stringToHttpMethod(headers.at(0));
-  rl.uri = headers.at(1);
+  auto uri = headers.at(1);
+  rl.uri = uri;
   rl.http_version = extractHttpVersion(headers.at(2));
 
   Headers hd{httpxx::headers};
@@ -78,7 +80,11 @@ inline Request createRequest(const char *_request_string) {
     auto value = hv.at(1);
     assert(not value.empty());
 
-    hd.at(head) = std::make_optional(value);
+    if (hd.contains(head)) {
+      hd.at(head) = std::make_optional(value);
+    } else {
+      continue;
+    }
   }
 
   // for (const auto& [k, v]: hd) {
@@ -105,6 +111,11 @@ void response_write(const Response &response, const int client_fd) {
 void handle_request(const httpxx::Router &router, int client_fd,
                     const char *buffer) {
   const auto req = createRequest(buffer);
+  if (req.requestsFile()) {
+    std::clog << "FIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIILE " << req.request_line.uri
+              << '\n';
+    std::clog << std::filesystem::current_path() << '\n';
+  }
   auto resp = router.get_handler_fn(req.request_line.uri)(client_fd, req);
   response_write(resp, client_fd);
   close(client_fd);

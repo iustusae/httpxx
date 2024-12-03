@@ -22,6 +22,7 @@ public:
     this->router = std::move(router);
   }
   auto start() const { socket.Listen(router); }
+  auto mt_start() const { socket.mt_Listen(router); }
   auto getSocket() -> httpx::Socket & { return socket; }
   auto setSocket(const httpx::Socket &socket) { this->socket = socket; }
 };

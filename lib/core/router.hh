@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-using handler_t = std::function<httpxx::Response(int, httpxx::Request)>;
+using handler_t = std::function<httpxx::Response(const int, httpxx::Request)>;
 
 namespace httpxx {
 struct Router {

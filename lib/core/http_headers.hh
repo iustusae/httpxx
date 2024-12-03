@@ -1,13 +1,15 @@
 #pragma once
+#include <algorithm>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
+
 namespace httpxx {
 using Headers = std::unordered_map<std::string, std::optional<std::string>>;
 
 const Headers headers = {
-    {"Accept", std::nullopt},
+    {"Accept", "*/*"},
     {"Accept-Charset", std::nullopt},
     {"Accept-Encoding", std::nullopt},
     {"Accept-Language", std::nullopt},
@@ -16,8 +18,6 @@ const Headers headers = {
     {"Allow", std::nullopt},
     {"Authorization", std::nullopt},
     {"Cache-Control", std::nullopt},
-    {"What is Cacheable", std::nullopt}, // This header name seems to be an
-                                         // extra detail; consider revising
     {"What May be Stored by Caches", std::nullopt},
     {"Modifications of the Basic Expiration Mechanism", std::nullopt},
     {"Cache Revalidation and Reload Controls", std::nullopt},
@@ -30,7 +30,7 @@ const Headers headers = {
     {"Content-Location", std::nullopt},
     {"Content-MD5", std::nullopt},
     {"Content-Range", std::nullopt},
-    {"Content-Type", std::nullopt},
+    {"Content-Type", "text/html"},
     {"Date", std::nullopt},
     {"Clockless Origin Server Operation",
      std::nullopt}, // This could be adjusted for clarity
@@ -95,5 +95,12 @@ inline std::string headersToString(const Headers &headers) {
   }
 
   return oss.str();
+}
+
+inline bool areEmpty(const Headers &hd) {
+  return std::ranges::all_of(
+      hd,
+      [](const std::pair<const std::string, const std::optional<std::string>>
+             &pair) { return pair.second == std::nullopt; });
 }
 } // namespace httpxx

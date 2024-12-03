@@ -1,4 +1,7 @@
 #include "router.hh"
+#include "http_builders.hh"
+#include "http_enums.hh"
+#include "http_objects.hh"
 namespace httpxx {
 
 void Router::add_endpoint(const std::string &path,
@@ -8,7 +11,15 @@ void Router::add_endpoint(const std::string &path,
 
 [[nodiscard]] handler_t Router::get_handler_fn(const std::string &path) const {
 
-  return endpoints.at(path);
+  if (endpoints.contains(path)) {
+    return endpoints.at(path);
+  } else {
+    return [](int client_fd, const Request rq) {
+      return http::ResponseBuilder{}
+          .setStatusCode(StatusCodes::NOT_FOUND)
+          .build();
+    };
+  }
 }
 
 void Router::init() { endpoints = {}; }
