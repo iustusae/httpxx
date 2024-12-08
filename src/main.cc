@@ -6,17 +6,11 @@
 
 int main(int argc, char* argv[])
 {
+    const auto app = Config::fromFile("../config.toml");
     httpxx::Router router;
     router.add_endpoint("/", [&](int client_fd, const httpxx::Request& request)
     {
-        auto res =
-            httpxx::http::ResponseBuilder{}
-            .setStatusCode(httpxx::StatusCodes::OK)
-            .setHeader("Content-Type", "text/html")
-            .setBody("<p>Hello, world!</p>\n <h1> This is served from c++</h1>")
-            .build();
-
-        return res;
+        return httpxx::handlers::serve_file(std::format("{}/index.html", app._www_path));
     });
 
     router.add_endpoint(
@@ -70,13 +64,12 @@ int main(int argc, char* argv[])
                                 return httpxx::http::ResponseBuilder{}
                                        .setStatusCode(httpxx::StatusCodes::OK)
                                        .setHeader("Content-Type", "text/html")
-                                       .setBody(req.body)
+                                       .setBody(req.body.value_or(""))
                                        .build();
                             }
                         });
 
 
-    const auto app = Config::fromFile("../config.toml");
     std::clog << std::format("server at: http://localhost:{}, www_path = {}", app._port, app._www_path) << '\n';
 
     httpxx::Server{router, app}.start();

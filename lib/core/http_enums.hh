@@ -487,14 +487,17 @@ namespace httpxx
         if (contentTypeStr == "application/x-7z-compressed") return ContentType::APPLICATION_7Z;
 
         if (contentTypeStr == "application/msword") return ContentType::APPLICATION_WORD;
-        if (contentTypeStr == "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return
-            ContentType::APPLICATION_WORD_XML;
+        if (contentTypeStr == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            return
+                ContentType::APPLICATION_WORD_XML;
         if (contentTypeStr == "application/vnd.ms-excel") return ContentType::APPLICATION_EXCEL;
-        if (contentTypeStr == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") return
-            ContentType::APPLICATION_EXCEL_XML;
+        if (contentTypeStr == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            return
+                ContentType::APPLICATION_EXCEL_XML;
         if (contentTypeStr == "application/vnd.ms-powerpoint") return ContentType::APPLICATION_POWERPOINT;
-        if (contentTypeStr == "application/vnd.openxmlformats-officedocument.presentationml.presentation") return
-            ContentType::APPLICATION_POWERPOINT_XML;
+        if (contentTypeStr == "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+            return
+                ContentType::APPLICATION_POWERPOINT_XML;
 
         if (contentTypeStr == "application/xhtml+xml") return ContentType::APPLICATION_XHTML;
         if (contentTypeStr == "application/rss+xml") return ContentType::APPLICATION_RSS;
@@ -504,92 +507,120 @@ namespace httpxx
         return ContentType::UNKNOWN;
     }
 
-   // Add this function to the existing ContentType enum class file
+    // Add this function to the existing ContentType enum class file
 
-// Function to get ContentType from filename
-inline ContentType getContentTypeFromFilename(const std::string& filename) {
-    // Find the file extension (everything after the last '.')
-    size_t dotPos = filename.find_last_of('.');
-    if (dotPos == std::string::npos || dotPos == filename.length() - 1) {
-        return ContentType::APPLICATION_OCTET_STREAM; // Default to binary if no extension
+    // Function to get ContentType from filename
+    inline ContentType getContentTypeFromFilename(const std::string& filename)
+    {
+        // Find the file extension (everything after the last '.')
+        size_t dotPos = filename.find_last_of('.');
+        if (dotPos == std::string::npos || dotPos == filename.length() - 1)
+        {
+            return ContentType::APPLICATION_OCTET_STREAM; // Default to binary if no extension
+        }
+
+        // Extract the extension and convert to lowercase for case-insensitive matching
+        std::string extension = filename.substr(dotPos + 1);
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+        // Map file extensions to content types
+        if (extension == "txt") return ContentType::TEXT_PLAIN;
+        if (extension == "html" || extension == "htm") return ContentType::TEXT_HTML;
+        if (extension == "css") return ContentType::TEXT_CSS;
+        if (extension == "js") return ContentType::TEXT_JAVASCRIPT;
+        if (extension == "json") return ContentType::APPLICATION_JSON;
+        if (extension == "xml") return ContentType::APPLICATION_XML;
+        if (extension == "pdf") return ContentType::APPLICATION_PDF;
+        if (extension == "csv") return ContentType::TEXT_CSV;
+        if (extension == "md") return ContentType::TEXT_MARKDOWN;
+
+        // Image types
+        if (extension == "jpg" || extension == "jpeg") return ContentType::IMAGE_JPEG;
+        if (extension == "png") return ContentType::IMAGE_PNG;
+        if (extension == "gif") return ContentType::IMAGE_GIF;
+        if (extension == "webp") return ContentType::IMAGE_WEBP;
+        if (extension == "svg") return ContentType::IMAGE_SVG;
+        if (extension == "tiff" || extension == "tif") return ContentType::IMAGE_TIFF;
+        if (extension == "bmp") return ContentType::IMAGE_BMP;
+
+        // Audio types
+        if (extension == "mp3") return ContentType::AUDIO_MPEG;
+        if (extension == "wav") return ContentType::AUDIO_WAV;
+        if (extension == "flac") return ContentType::AUDIO_FLAC;
+        if (extension == "ogg") return ContentType::AUDIO_OGG;
+        if (extension == "webm") return ContentType::AUDIO_WEBM;
+        if (extension == "m4a") return ContentType::AUDIO_MP4;
+
+        // Video types
+        if (extension == "mp4") return ContentType::VIDEO_MP4;
+        if (extension == "avi") return ContentType::VIDEO_AVI;
+        if (extension == "mov") return ContentType::VIDEO_QUICKTIME;
+        if (extension == "mkv") return ContentType::VIDEO_MKV;
+
+        // Font types
+        if (extension == "woff") return ContentType::FONT_WOFF;
+        if (extension == "woff2") return ContentType::FONT_WOFF2;
+        if (extension == "ttf") return ContentType::FONT_TTF;
+        if (extension == "otf") return ContentType::FONT_OTF;
+        if (extension == "eot") return ContentType::FONT_EOT;
+
+        // Archive types
+        if (extension == "zip") return ContentType::APPLICATION_ZIP;
+        if (extension == "rar") return ContentType::APPLICATION_RAR;
+        if (extension == "gz" || extension == "gzip") return ContentType::APPLICATION_GZIP;
+        if (extension == "tar") return ContentType::APPLICATION_TAR;
+        if (extension == "7z") return ContentType::APPLICATION_7Z;
+
+        // Office document types
+        if (extension == "doc") return ContentType::APPLICATION_WORD;
+        if (extension == "docx") return ContentType::APPLICATION_WORD_XML;
+        if (extension == "xls") return ContentType::APPLICATION_EXCEL;
+        if (extension == "xlsx") return ContentType::APPLICATION_EXCEL_XML;
+        if (extension == "ppt") return ContentType::APPLICATION_POWERPOINT;
+        if (extension == "pptx") return ContentType::APPLICATION_POWERPOINT_XML;
+
+        // Additional types
+        if (extension == "xhtml") return ContentType::APPLICATION_XHTML;
+        if (extension == "wasm") return ContentType::APPLICATION_WASM;
+
+        // Default to unknown/binary if no match
+        return ContentType::APPLICATION_OCTET_STREAM;
     }
 
-    // Extract the extension and convert to lowercase for case-insensitive matching
-    std::string extension = filename.substr(dotPos + 1);
-    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    // Optional: Overloaded version that works with file paths
+    inline ContentType getContentTypeFromFilename(const std::string& filepath, bool)
+    {
+        // Extract filename from full path
+        size_t lastSlashPos = filepath.find_last_of("/\\");
+        std::string filename = (lastSlashPos == std::string::npos)
+                                   ? filepath
+                                   : filepath.substr(lastSlashPos + 1);
 
-    // Map file extensions to content types
-    if (extension == "txt") return ContentType::TEXT_PLAIN;
-    if (extension == "html" || extension == "htm") return ContentType::TEXT_HTML;
-    if (extension == "css") return ContentType::TEXT_CSS;
-    if (extension == "js") return ContentType::TEXT_JAVASCRIPT;
-    if (extension == "json") return ContentType::APPLICATION_JSON;
-    if (extension == "xml") return ContentType::APPLICATION_XML;
-    if (extension == "pdf") return ContentType::APPLICATION_PDF;
-    if (extension == "csv") return ContentType::TEXT_CSV;
-    if (extension == "md") return ContentType::TEXT_MARKDOWN;
+        return getContentTypeFromFilename(filename);
+    }
 
-    // Image types
-    if (extension == "jpg" || extension == "jpeg") return ContentType::IMAGE_JPEG;
-    if (extension == "png") return ContentType::IMAGE_PNG;
-    if (extension == "gif") return ContentType::IMAGE_GIF;
-    if (extension == "webp") return ContentType::IMAGE_WEBP;
-    if (extension == "svg") return ContentType::IMAGE_SVG;
-    if (extension == "tiff" || extension == "tif") return ContentType::IMAGE_TIFF;
-    if (extension == "bmp") return ContentType::IMAGE_BMP;
-
-    // Audio types
-    if (extension == "mp3") return ContentType::AUDIO_MPEG;
-    if (extension == "wav") return ContentType::AUDIO_WAV;
-    if (extension == "flac") return ContentType::AUDIO_FLAC;
-    if (extension == "ogg") return ContentType::AUDIO_OGG;
-    if (extension == "webm") return ContentType::AUDIO_WEBM;
-    if (extension == "m4a") return ContentType::AUDIO_MP4;
-
-    // Video types
-    if (extension == "mp4") return ContentType::VIDEO_MP4;
-    if (extension == "avi") return ContentType::VIDEO_AVI;
-    if (extension == "mov") return ContentType::VIDEO_QUICKTIME;
-    if (extension == "mkv") return ContentType::VIDEO_MKV;
-
-    // Font types
-    if (extension == "woff") return ContentType::FONT_WOFF;
-    if (extension == "woff2") return ContentType::FONT_WOFF2;
-    if (extension == "ttf") return ContentType::FONT_TTF;
-    if (extension == "otf") return ContentType::FONT_OTF;
-    if (extension == "eot") return ContentType::FONT_EOT;
-
-    // Archive types
-    if (extension == "zip") return ContentType::APPLICATION_ZIP;
-    if (extension == "rar") return ContentType::APPLICATION_RAR;
-    if (extension == "gz" || extension == "gzip") return ContentType::APPLICATION_GZIP;
-    if (extension == "tar") return ContentType::APPLICATION_TAR;
-    if (extension == "7z") return ContentType::APPLICATION_7Z;
-
-    // Office document types
-    if (extension == "doc") return ContentType::APPLICATION_WORD;
-    if (extension == "docx") return ContentType::APPLICATION_WORD_XML;
-    if (extension == "xls") return ContentType::APPLICATION_EXCEL;
-    if (extension == "xlsx") return ContentType::APPLICATION_EXCEL_XML;
-    if (extension == "ppt") return ContentType::APPLICATION_POWERPOINT;
-    if (extension == "pptx") return ContentType::APPLICATION_POWERPOINT_XML;
-
-    // Additional types
-    if (extension == "xhtml") return ContentType::APPLICATION_XHTML;
-    if (extension == "wasm") return ContentType::APPLICATION_WASM;
-
-    // Default to unknown/binary if no match
-    return ContentType::APPLICATION_OCTET_STREAM;
-}
-
-// Optional: Overloaded version that works with file paths
-inline ContentType getContentTypeFromFilename(const std::string& filepath, bool) {
-    // Extract filename from full path
-    size_t lastSlashPos = filepath.find_last_of("/\\");
-    std::string filename = (lastSlashPos == std::string::npos)
-        ? filepath
-        : filepath.substr(lastSlashPos + 1);
-
-    return getContentTypeFromFilename(filename);
-}
+    inline bool isTextFile(const ContentType type)
+    {
+        switch (type)
+        {
+        case ContentType::TEXT_PLAIN:
+        case ContentType::TEXT_HTML:
+        case ContentType::TEXT_CSS:
+        case ContentType::TEXT_JAVASCRIPT:
+        case ContentType::TEXT_CSV:
+        case ContentType::TEXT_XML:
+        case ContentType::TEXT_MARKDOWN:
+        case ContentType::APPLICATION_JSON:
+        case ContentType::APPLICATION_XML:
+        case ContentType::APPLICATION_FORM_URLENCODED:
+        case ContentType::APPLICATION_GRAPHQL:
+        case ContentType::APPLICATION_XHTML:
+        case ContentType::APPLICATION_RSS:
+        case ContentType::APPLICATION_ATOM:
+        case ContentType::TEXT_EVENT_STREAM:
+            return true;
+        default:
+            return false;
+        }
+    }
 } // namespace httpxx

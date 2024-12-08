@@ -126,78 +126,93 @@ namespace httpxx
 
         void response_write(const Response& response, const int client_fd)
         {
-            write(client_fd, response.toString().c_str(),
-                  std::strlen(response.toString().c_str()));
+            // Write headers
+            const std::string headers = response.toString();
+            write(client_fd, headers.c_str(), headers.length());
+
+            // Write body
+            std::visit(overload{
+                           [](std::monostate)
+                           {
+                           },
+                           [client_fd](const std::string& str)
+                           {
+                               write(client_fd, str.c_str(), str.length());
+                           },
+                           [client_fd](const std::vector<char>& vec)
+                           {
+                               write(client_fd, vec.data(), vec.size());
+                           }
+                       }, response.response_body);
         }
 
         auto serve_file(const std::filesystem::path& path) -> Response
         {
-            // Check if file exists
+            ContentType content_type = getContentTypeFromFilename(path);
             if (!std::filesystem::exists(path))
             {
                 return http::ResponseBuilder{}
-                .setStatusCode(StatusCodes::NOT_FOUND)
-                .setContentType(ContentType::TEXT_HTML)
-                .setBody("<h1>404 - File Not Found</h1>")
-                .build();
+                       .setStatusCode(StatusCodes::NOT_FOUND)
+                       .setContentType(ContentType::TEXT_HTML)
+                       .setBody("<h1>404 - File Not Found</h1>")
+                       .build();
             }
 
-            // Attempt to read the file
             try
             {
-                // Open file in binary mode to read all content as raw bytes
-                std::ifstream file(path, std::ios::binary | std::ios::in);
-                if (!file)
+                if (isTextFile(content_type))
                 {
-                    throw std::ios_base::failure("Failed to open file");
+                    std::ifstream ifs(path);
+                    std::string content((std::istreambuf_iterator<char>(ifs)),
+                                        std::istreambuf_iterator<char>());
+
+                    return http::ResponseBuilder{}
+                           .setStatusCode(StatusCodes::OK)
+                           .setContentType(content_type)
+                           .setBody(content)
+                           .build();
                 }
+                else
+                {
+                    // Use binary mode for non-text files
+                    std::ifstream ifs(path, std::ios::binary);
+                    std::vector<char> buffer{std::istreambuf_iterator<char> (ifs),
+                                             std::istreambuf_iterator<char> ()};
 
-                // Read the file content into a vector of bytes
-                std::ostringstream sout;
-                std::copy(std::istreambuf_iterator<char>(file),
-                          std::istreambuf_iterator<char>(),
-                          std::ostreambuf_iterator<char>(sout));
-                // Get content type from the file's extension or logic
-                ContentType content_type = getContentTypeFromFilename(path);
-
-                // Create and return the HTTP response
-                return http::ResponseBuilder{}
-                .setContentType(content_type) // Using the enum value
-                .setStatusCode(StatusCodes::OK)
-                .setHeader("Content-Length", std::to_string(sout.str().size()))
-                .setBody(sout.str()) // Use the binary content as the body
-                .build();
+                    return http::ResponseBuilder{}
+                           .setStatusCode(StatusCodes::OK)
+                           .setContentType(content_type)
+                           .setBinaryBody(buffer)
+                           .build();
+                }
             }
             catch (const std::exception& e)
             {
-                // Handle failure in file reading
+                std::clog << "File serving error: " << e.what() << '\n';
                 return http::ResponseBuilder{}
-                .setStatusCode(StatusCodes::INTERNAL_SERVER_ERROR)
-                .setContentType(ContentType::TEXT_HTML)
-                .setBody("<h1>500 - Internal Server Error</h1>")
-                .build();
+                       .setStatusCode(StatusCodes::INTERNAL_SERVER_ERROR)
+                       .setContentType(ContentType::TEXT_HTML)
+                       .setBody("<h1>500 - Internal Server Error</h1>")
+                       .build();
             }
         }
 
 
-    void handle_request(const httpxx::Router& router, const Config& config, int client_fd,
-                        const char* buffer)
-    {
-        const auto req = createRequest(buffer);\
-        Response res{};
-        if (req.requestsFile())
+        void handle_request(const httpxx::Router& router, const Config& config, int client_fd,
+                            const char* buffer)
         {
-            std::clog << "FIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIILE " << req.request_line.uri
-                << '\n';
-            std::clog << std::format("{}{}", config._www_path, req.request_line.uri) << '\n';
-            res = serve_file(std::format("{}{}", config._www_path, req.request_line.uri));
+            const auto req = createRequest(buffer);
+            Response res{};
+            if (req.requestsFile())
+            {
+                res = serve_file(std::format("{}{}", config._www_path, req.request_line.uri));
+            }
+            else
+            {
+                res = router.get_handler_fn(req.request_line.uri)(client_fd, req);
+            }
+            response_write(res, client_fd);
+            close(client_fd);
         }
-        else
-        {
-            res = router.get_handler_fn(req.request_line.uri)(client_fd, req);
-        }
-        response_write(res, client_fd);
-        close(client_fd);
-    }
-} // namespace handlers
+    } // namespace handlers
 } // namespace httpxx
