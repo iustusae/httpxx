@@ -8,6 +8,12 @@ namespace httpxx::http {
 struct ResponseBuilder {
   ResponseBuilder() : built_reponse(Response{}) {}
 
+
+  auto setContentType(ContentType ct)
+  {
+      this->setHeader("Content-Type", contentTypeToString(ct));
+    return *this;
+  }
   auto setStartLine(float http_version, StatusCodes status_code)
       -> ResponseBuilder & {
     built_reponse.start_line = {http_version, status_code};

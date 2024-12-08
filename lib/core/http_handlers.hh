@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "http_config.hh"
+
 namespace httpxx::http {
 static constexpr size_t MAX_BUFFER = 4096;
 static constexpr auto HTTP_400 = "HTTP/1.1 400 Not Found\r\n\r\n";
@@ -26,7 +28,7 @@ inline std::vector<std::string> split(const std::string &str,
 namespace handlers {
 Request createRequest(const char *_request_string);
 
-void handle_request(const httpxx::Router &router, int client_fd,
+void handle_request(const httpxx::Router &router, const Config& config, int client_fd,
                     const char *buffer);
 } // namespace handlers
 

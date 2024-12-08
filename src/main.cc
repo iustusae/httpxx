@@ -1,26 +1,28 @@
-
 #include "../lib/core/http_builders.hh"
 #include "../lib/core/router.hh"
 #include "../lib/server/Server.hh"
 #include "core/http_enums.hh"
 #include "core/http_objects.hh"
-int main(int argc, char *argv[]) {
 
-  httpxx::Router router;
-  router.add_endpoint("/", [&](int client_fd, const httpxx::Request request) {
-    auto res =
-        httpxx::http::ResponseBuilder{}
+int main(int argc, char* argv[])
+{
+    httpxx::Router router;
+    router.add_endpoint("/", [&](int client_fd, const httpxx::Request& request)
+    {
+        auto res =
+            httpxx::http::ResponseBuilder{}
             .setStatusCode(httpxx::StatusCodes::OK)
             .setHeader("Content-Type", "text/html")
             .setBody("<p>Hello, world!</p>\n <h1> This is served from c++</h1>")
             .build();
 
-    return res;
-  });
+        return res;
+    });
 
-  router.add_endpoint(
-      "/jason", [&](int client_fd, const httpxx::Request request) {
-        std::string json_data = R"({
+    router.add_endpoint(
+        "/jason", [&](int client_fd, const httpxx::Request& request)
+        {
+            std::string json_data = R"({
         "string_id": "unique12345",
         "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
         "metadata": {
@@ -53,23 +55,29 @@ int main(int argc, char *argv[]) {
             "summary": "This content serves as placeholder text often used in graphic design or testing scenarios."
         }
     })";
-        auto res = httpxx::http::ResponseBuilder{}
+            auto res = httpxx::http::ResponseBuilder{}
                        .setStatusCode(httpxx::StatusCodes::OK)
-                       .setHeader("Content-Type", "application/json")
+                       .setContentType(httpxx::ContentType::APPLICATION_JSON)
                        .setBody(json_data)
                        .build();
 
-        return res;
-      });
+            return res;
+        });
 
-  router.add_endpoint("/echo", {[](const int &cfd, const httpxx::Request &req) {
-                        return httpxx::http::ResponseBuilder{}
-                            .setStatusCode(httpxx::StatusCodes::OK)
-                            .setHeader("Content-Type", "text/html")
-                            .setBody(req.body)
-                            .build();
-                      }});
+    router.add_endpoint("/echo", {
+                            [](const int& cfd, const httpxx::Request& req)
+                            {
+                                return httpxx::http::ResponseBuilder{}
+                                       .setStatusCode(httpxx::StatusCodes::OK)
+                                       .setHeader("Content-Type", "text/html")
+                                       .setBody(req.body)
+                                       .build();
+                            }
+                        });
 
-  const httpxx::Server server{router, 9999};
-  server.start();
+
+    const auto app = Config::fromFile("../config.toml");
+    std::clog << std::format("server at: http://localhost:{}, www_path = {}", app._port, app._www_path) << '\n';
+
+    httpxx::Server{router, app}.start();
 }

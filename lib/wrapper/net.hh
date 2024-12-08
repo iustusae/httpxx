@@ -21,6 +21,8 @@
 #include <thread>
 #include <unistd.h>
 
+#include "../core/http_config.hh"
+
 namespace httpx {
 
 class httpxSocketException : public std::exception {
@@ -192,8 +194,8 @@ public:
     close(client_fd);
   }
 
-  auto Listen(const httpxx::Router &router,
-              int max_queued_connections = SOMAXCONN) const -> void {
+  auto Listen(const httpxx::Router &router, const Config& config,
+              const int max_queued_connections = SOMAXCONN) const -> void {
     std::atomic<int> connection_count{0};
 
     // Set up the initial listen
@@ -217,79 +219,12 @@ public:
         continue;
       }
       std::clog << "[" << connection_count << "]'s request: \n" << buffer;
-      std::jthread{&httpxx::handlers::handle_request, std::move(router),
+      std::jthread{&httpxx::handlers::handle_request, std::move(router), std::move(config),
                    std::move(client_fd), std::move(buffer)};
     }
   }
 
-  auto mt_Listen(const httpxx::Router &router,
-                 int max_queued_connections = SOMAXCONN) const -> void {
-    std::atomic<int> connection_count{0};
 
-    // Set up the initial listen
-    if (listen(_fd, max_queued_connections) != 0) {
-      throw httpxSocketException(
-          "[httpx::Socket::Listen] Failed to initialize listening");
-    }
-
-    // Number of available CPU cores
-    unsigned int num_threads = std::thread::hardware_concurrency();
-    std::clog << "Using " << num_threads << " threads for handling requests\n";
-
-    // Thread-safe queue to hold client connections
-    std::queue<std::tuple<int, httpxx::Router>> request_queue;
-    std::mutex queue_mutex;
-    std::condition_variable queue_cv;
-
-    // Worker function to handle requests
-    auto worker = [&]() {
-      while (true) {
-        std::tuple<int, httpxx::Router> client_request;
-        {
-          std::unique_lock lock(queue_mutex);
-          queue_cv.wait(lock, [&] { return !request_queue.empty(); });
-          client_request = std::move(request_queue.front());
-          request_queue.pop();
-        }
-
-        // Process the client request
-        int client_fd = std::get<0>(client_request);
-        auto &router = std::get<1>(client_request);
-        char buffer[4096];
-        bzero(&buffer, 4096);
-        if (read(client_fd, &buffer, 4096) == -1) {
-          close(client_fd);
-          continue;
-        }
-
-        std::clog << "[" << ++connection_count << "]'s request: \n" << buffer;
-        httpxx::handlers::handle_request(router, client_fd, buffer);
-        close(client_fd);
-      }
-    };
-
-    // Create worker threads
-    std::vector<std::jthread> workers;
-    for (unsigned int i = 0; i < num_threads; ++i) {
-      workers.emplace_back(worker);
-    }
-
-    // Accept connections and enqueue requests
-    while (true) {
-      int client_fd = Accept();
-      if (client_fd < 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        continue;
-      }
-
-      std::clog << "\nclient #" << ++connection_count << " connected\n";
-      {
-        std::lock_guard lock(queue_mutex);
-        request_queue.push({client_fd, router});
-      }
-      queue_cv.notify_one(); // Notify one worker that a request is available
-    }
-  }
 
 public:
   Socket() = default;

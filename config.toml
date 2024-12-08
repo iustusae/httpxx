@@ -1,0 +1,3 @@
+[server]
+port=6969
+www_path="/home/iustus/http_test/"

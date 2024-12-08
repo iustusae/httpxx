@@ -7,4 +7,5 @@ file(
 
 add_library(httpxx STATIC ${HTTPX_SOURCES}
         core/http_object.cpp
+        ../include/tomlpp.hh
 )

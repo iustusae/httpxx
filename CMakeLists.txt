@@ -9,9 +9,12 @@ project(
   httpx
   VERSION 0.0.1
   LANGUAGES CXX)
-
+enable_testing()
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/lib/build)
+add_subdirectory(${CMAKE_SOURCE_DIR}/tests ${CMAKE_SOURCE_DIR}/tests/build)
+add_executable(server src/main.cc
+        util/httpxx_assert.h
+       )
 
-add_executable(server src/main.cc)
 target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 target_link_libraries(server PUBLIC httpxx)
