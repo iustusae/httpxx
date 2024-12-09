@@ -12,10 +12,10 @@ project(
   VERSION 0.0.1
   LANGUAGES CXX)
 enable_testing()
+include_directories(${CMAKE_SOURCE_DIR}/lib)
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/lib/build)
 add_subdirectory(${CMAKE_SOURCE_DIR}/tests ${CMAKE_SOURCE_DIR}/tests/build)
 add_executable(server src/main.cc
-        util/httpxx_assert.h
        )
 
 target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib)

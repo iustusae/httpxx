@@ -3,44 +3,47 @@
 #include "http_enums.hh"
 #include "http_objects.hh"
 #include <optional>
+
 namespace httpxx::http {
-
 struct ResponseBuilder {
-  ResponseBuilder() : built_response(Response{}) {}
+  ResponseBuilder() : built_response(Response{}) {
+  }
 
-  auto setContentType(ContentType ct) -> ResponseBuilder & {
+  auto setContentType(ContentType ct) -> ResponseBuilder& {
     this->setHeader("Content-Type", contentTypeToString(ct));
     return *this;
   }
 
-  auto setContentLength(std::size_t len) -> ResponseBuilder & {
+  auto setContentLength(std::size_t len) -> ResponseBuilder& {
     this->setHeader("Content-Length", std::to_string(len));
     return *this;
   }
 
-  auto setStartLine(float http_version, StatusCodes status_code) -> ResponseBuilder & {
+  auto setStartLine(float http_version,
+                    StatusCodes status_code) -> ResponseBuilder& {
     built_response.start_line = {http_version, status_code};
     return *this;
   }
 
-  auto setStatusCode(StatusCodes status_code) -> ResponseBuilder & {
+  auto setStatusCode(StatusCodes status_code) -> ResponseBuilder& {
     return this->setStartLine(1.1, status_code);
   }
 
-  auto setHeader(const std::string &header, const std::string &value) -> ResponseBuilder & {
+  auto setHeader(const std::string& header,
+                 const std::string& value) -> ResponseBuilder& {
     built_response.hd[header] = value;
     return *this;
   }
 
   // Text body setter
-  auto setBody(const std::string &body) -> ResponseBuilder & {
+  auto setBody(const std::string& body) -> ResponseBuilder& {
     built_response.response_body = body;
     setContentLength(body.size());
     return *this;
   }
 
   // Binary body setter
-  auto setBinaryBody(const std::vector<char> &body) -> ResponseBuilder & {
+  auto setBinaryBody(const std::vector<char>& body) -> ResponseBuilder& {
     built_response.response_body = body;
     setContentLength(body.size());
     return *this;
@@ -53,4 +56,5 @@ struct ResponseBuilder {
 
 private:
   Response built_response{};
-};} // namespace httpxx::http
+};
+} // namespace httpxx::http
