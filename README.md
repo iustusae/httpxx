@@ -1,7 +1,3 @@
-Here's a `README.md` file tailored for your project, based on the provided code and description:
-
----
-
 # httpxx: A Simple HTTP/1.1 Server in C++23
 
 `httpxx` is a simple HTTP/1.1 server implementation written in modern C++23. The server is capable of serving static files, handling various endpoints, and responding with JSON data. It provides a basic framework for building custom HTTP servers in C++ with minimal dependencies.
@@ -168,7 +164,3 @@ Contributions to `httpxx` are welcome! If you'd like to contribute, feel free to
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-This `README.md` should cover the core usage, setup, and contribution guidelines for your project. It includes all relevant details about the example, how to build and run the project, and a basic configuration file.
