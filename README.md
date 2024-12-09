@@ -95,6 +95,11 @@ int main(int argc, char* argv[]) {
 
 - The server uses `httpxx::handlers::serve_file()` to serve files like HTML and images. These files are read from the file system, and the server sends them as HTTP responses.
 
+### 1M Requests Benchmark using Apache Benchmark to get a simple TODO-List app with html, css and js
+
+![image](https://github.com/user-attachments/assets/db799b02-9571-4698-8d00-437b65d938ed)
+
+
 ## Project Setup
 
 ### Prerequisites
