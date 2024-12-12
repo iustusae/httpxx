@@ -7,13 +7,13 @@
 int main(int argc, char* argv[]) {
   const auto app = Config::fromFile("../config.toml");
   httpxx::Router router;
-  router.add_endpoint("/", [&](int client_fd, const httpxx::Request& request) {
+  router.add_endpoint("/", [&](const httpxx::Request& request) {
     return httpxx::handlers::serve_file(
         std::format("{}/index.html", app._www_path));
   });
 
   router.add_endpoint(
-      "/jason", [&](int client_fd, const httpxx::Request& request) {
+      "/jason", [&](const httpxx::Request& request) {
         const std::string json_data = R"({
         "string_id": "unique12345",
         "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
         return res;
       });
 
-  router.add_endpoint("/echo", {[](const int& cfd, const httpxx::Request& req) {
+  router.add_endpoint("/echo", {[](const httpxx::Request& req) {
     return httpxx::http::ResponseBuilder{}
            .setStatusCode(httpxx::StatusCodes::OK)
            .setHeader("Content-Type", "text/html")

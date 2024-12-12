@@ -14,7 +14,7 @@ void Router::add_endpoint(const std::string& path,
   if (endpoints.contains(path)) {
     return endpoints.at(path);
   } else {
-    return [](int client_fd, const Request& rq) {
+    return [](const Request&) {
       return http::ResponseBuilder{}
              .setStatusCode(StatusCodes::NOT_FOUND)
              .build();

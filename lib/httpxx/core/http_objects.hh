@@ -42,9 +42,6 @@ struct Request {
   Headers headers;
   std::optional<Body> body;
 
-  explicit Request(const char* request) {
-  }
-
   explicit Request(RequestLine request_line, Headers headers,
                    const std::optional<Body>& body)
     : request_line(std::move(request_line)), headers(std::move(headers)),

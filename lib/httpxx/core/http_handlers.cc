@@ -164,7 +164,7 @@ void handle_request(const httpxx::Router& router, const Config& config,
       res = serve_file(
           std::format("{}{}", config._www_path, req.request_line.uri));
     } else {
-      res = router.get_handler_fn(req.request_line.uri)(client_fd, req);
+      res = router.get_handler_fn(req.request_line.uri)(req);
     }
     response_write(res, client_fd);
     close(client_fd);
