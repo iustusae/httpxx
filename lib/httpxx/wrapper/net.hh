@@ -53,7 +53,7 @@ private:
 
 public:
   auto SetSocketOption(SocketOptions option, SocketOptionValue option_value) {
-    int opt =
+    const int opt =
         setsockopt(_fd, as_integer(SocketLevel::sol_socket), as_integer(option),
                    &option_value, sizeof(option_value));
     if (opt != 0) {
@@ -137,7 +137,7 @@ public:
   [[nodiscard]] auto Accept() const -> int {
     struct sockaddr_in client_addr{};
     int client_addr_len = sizeof(client_addr);
-    int client_fd =
+    const int client_fd =
         accept(_fd, reinterpret_cast<struct sockaddr*>(&client_addr),
                reinterpret_cast<socklen_t*>(&client_addr_len));
 

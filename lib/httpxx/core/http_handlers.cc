@@ -64,7 +64,30 @@ inline Request createRequest(const char* _request_string) {
 
   rl.method = stringToHttpMethod(headers.at(0));
   auto uri = headers.at(1);
-  rl.uri = uri;
+
+  std::unordered_map<std::string, std::string> req_parms;
+
+  if (uri.find("?") != std::string::npos) {
+    std::clog << "req params in url\n";
+    auto split_uri = split(uri, "?");
+    rl.uri = split_uri.at(0);
+    auto split_params = split(split_uri.at(1), "&");
+    std::clog << uri << "\n";
+    for (const auto& i : split_params) {
+      std::clog << i << " ";
+    }
+    std::clog << '\n';
+
+    for (const auto& param : split_params) {
+      auto pvp = split(param, "=");
+      std::clog << "pvp: " << std::format("{}, {}", pvp.at(0), pvp.at(1))
+                << '\n';
+      req_parms.insert({pvp.at(0), pvp.at(1)});
+    }
+  } else {
+    rl.uri = uri;
+  }
+
   rl.http_version = extractHttpVersion(headers.at(2));
 
   Headers hd{httpxx::headers};
@@ -91,7 +114,7 @@ inline Request createRequest(const char* _request_string) {
   std::getline(iss, line);
   Body body{line};
 
-  auto rq = Request{rl, hd, std::make_optional(body)};
+  auto rq = Request{rl, hd, std::make_optional(body), req_parms};
   return rq;
 }
 
@@ -101,8 +124,7 @@ void response_write(const Response& response, const int client_fd) {
   write(client_fd, headers.c_str(), headers.length());
 
   // Write body
-  std::visit(overload{[](std::monostate) {
-                      },
+  std::visit(overload{[](std::monostate) {},
                       [client_fd](const std::string& str) {
                         write(client_fd, str.c_str(), str.length());
                       },
@@ -116,10 +138,10 @@ auto serve_file(const std::filesystem::path& path) -> Response {
   ContentType content_type = getContentTypeFromFilename(path);
   if (!std::filesystem::exists(path)) {
     return http::ResponseBuilder{}
-           .setStatusCode(StatusCodes::NOT_FOUND)
-           .setContentType(ContentType::TEXT_HTML)
-           .setBody("<h1>404 - File Not Found</h1>")
-           .build();
+        .setStatusCode(StatusCodes::NOT_FOUND)
+        .setContentType(ContentType::TEXT_HTML)
+        .setBody("<h1>404 - File Not Found</h1>")
+        .build();
   }
 
   try {
@@ -129,10 +151,10 @@ auto serve_file(const std::filesystem::path& path) -> Response {
                           std::istreambuf_iterator<char>());
 
       return http::ResponseBuilder{}
-             .setStatusCode(StatusCodes::OK)
-             .setContentType(content_type)
-             .setBody(content)
-             .build();
+          .setStatusCode(StatusCodes::OK)
+          .setContentType(content_type)
+          .setBody(content)
+          .build();
     } else {
       // Use binary mode for non-text files
       std::ifstream ifs(path, std::ios::binary);
@@ -140,18 +162,18 @@ auto serve_file(const std::filesystem::path& path) -> Response {
                                std::istreambuf_iterator<char>()};
 
       return http::ResponseBuilder{}
-             .setStatusCode(StatusCodes::OK)
-             .setContentType(content_type)
-             .setBinaryBody(buffer)
-             .build();
+          .setStatusCode(StatusCodes::OK)
+          .setContentType(content_type)
+          .setBinaryBody(buffer)
+          .build();
     }
   } catch (const std::exception& e) {
     std::clog << "File serving error: " << e.what() << '\n';
     return http::ResponseBuilder{}
-           .setStatusCode(StatusCodes::INTERNAL_SERVER_ERROR)
-           .setContentType(ContentType::TEXT_HTML)
-           .setBody("<h1>500 - Internal Server Error</h1>")
-           .build();
+        .setStatusCode(StatusCodes::INTERNAL_SERVER_ERROR)
+        .setContentType(ContentType::TEXT_HTML)
+        .setBody("<h1>500 - Internal Server Error</h1>")
+        .build();
   }
 }
 
@@ -171,11 +193,11 @@ void handle_request(const httpxx::Router& router, const Config& config,
   } catch (const std::exception& e) {
     std::clog << e.what() << '\n';
     response_write(http::ResponseBuilder{}
-                   .setStatusCode(StatusCodes::INTERNAL_SERVER_ERROR)
-                   .build(),
+                       .setStatusCode(StatusCodes::INTERNAL_SERVER_ERROR)
+                       .build(),
                    client_fd);
     close(client_fd);
   }
 }
-} // namespace handlers
-} // namespace httpxx
+}  // namespace handlers
+}  // namespace httpxx

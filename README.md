@@ -152,13 +152,11 @@ port = 8080
 www_path = "/path/to/static/files"
 ```
 
-### Testing
+### Dependencies:
 
-To run the tests, simply navigate to the `build` directory and run:
+- `nlohmann_json`
+- `inja`
 
-```bash
-ctest
-```
 
 Tests are located in the `tests/` directory.
 

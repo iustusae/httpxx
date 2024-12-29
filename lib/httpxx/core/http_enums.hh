@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstdint>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -14,6 +13,8 @@ enum class HttpMethod {
   DELETE,
   http_method_count,
 };
+
+
 
 inline std::ostream& operator<<(std::ostream& out, const HttpMethod method) {
   switch (method) {
@@ -247,7 +248,6 @@ inline std::string operator+(const StatusCodes& method) {
   return str;
 }
 
-
 enum class ContentType {
   // Text Types
   TEXT_PLAIN,
@@ -443,18 +443,18 @@ inline std::string contentTypeToString(ContentType type) {
     case ContentType::APPLICATION_WORD:
       return "application/msword";
     case ContentType::APPLICATION_WORD_XML:
-      return
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      return "application/"
+             "vnd.openxmlformats-officedocument.wordprocessingml.document";
     case ContentType::APPLICATION_EXCEL:
       return "application/vnd.ms-excel";
     case ContentType::APPLICATION_EXCEL_XML:
-      return
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      return "application/"
+             "vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     case ContentType::APPLICATION_POWERPOINT:
       return "application/vnd.ms-powerpoint";
     case ContentType::APPLICATION_POWERPOINT_XML:
-      return
-          "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+      return "application/"
+             "vnd.openxmlformats-officedocument.presentationml.presentation";
 
     // Other Specialized Types
     case ContentType::APPLICATION_XHTML:
@@ -483,33 +483,25 @@ inline ContentType stringToContentType(const std::string& contentTypeStr) {
   if (contentTypeStr == "text/markdown") return ContentType::TEXT_MARKDOWN;
 
   if (contentTypeStr == "application/json")
-    return
-        ContentType::APPLICATION_JSON;
+    return ContentType::APPLICATION_JSON;
   if (contentTypeStr == "application/xml") return ContentType::APPLICATION_XML;
   if (contentTypeStr == "application/pdf") return ContentType::APPLICATION_PDF;
   if (contentTypeStr == "application/octet-stream")
-    return
-        ContentType::APPLICATION_OCTET_STREAM;
+    return ContentType::APPLICATION_OCTET_STREAM;
   if (contentTypeStr == "application/x-www-form-urlencoded")
-    return
-        ContentType::APPLICATION_FORM_URLENCODED;
+    return ContentType::APPLICATION_FORM_URLENCODED;
   if (contentTypeStr == "application/graphql")
-    return
-        ContentType::APPLICATION_GRAPHQL;
+    return ContentType::APPLICATION_GRAPHQL;
   if (contentTypeStr == "application/wasm")
-    return
-        ContentType::APPLICATION_WASM;
+    return ContentType::APPLICATION_WASM;
 
   if (contentTypeStr == "multipart/form-data")
-    return
-        ContentType::MULTIPART_FORM_DATA;
+    return ContentType::MULTIPART_FORM_DATA;
   if (contentTypeStr == "multipart/mixed") return ContentType::MULTIPART_MIXED;
   if (contentTypeStr == "multipart/alternative")
-    return
-        ContentType::MULTIPART_ALTERNATIVE;
+    return ContentType::MULTIPART_ALTERNATIVE;
   if (contentTypeStr == "multipart/related")
-    return
-        ContentType::MULTIPART_RELATED;
+    return ContentType::MULTIPART_RELATED;
 
   if (contentTypeStr == "image/jpeg") return ContentType::IMAGE_JPEG;
   if (contentTypeStr == "image/png") return ContentType::IMAGE_PNG;
@@ -537,57 +529,43 @@ inline ContentType stringToContentType(const std::string& contentTypeStr) {
   if (contentTypeStr == "font/ttf") return ContentType::FONT_TTF;
   if (contentTypeStr == "font/otf") return ContentType::FONT_OTF;
   if (contentTypeStr == "application/vnd.ms-fontobject")
-    return
-        ContentType::FONT_EOT;
+    return ContentType::FONT_EOT;
 
   if (contentTypeStr == "application/zip") return ContentType::APPLICATION_ZIP;
   if (contentTypeStr == "application/x-rar-compressed")
-    return
-        ContentType::APPLICATION_RAR;
+    return ContentType::APPLICATION_RAR;
   if (contentTypeStr == "application/gzip")
-    return
-        ContentType::APPLICATION_GZIP;
+    return ContentType::APPLICATION_GZIP;
   if (contentTypeStr == "application/x-tar")
-    return
-        ContentType::APPLICATION_TAR;
+    return ContentType::APPLICATION_TAR;
   if (contentTypeStr == "application/x-7z-compressed")
-    return
-        ContentType::APPLICATION_7Z;
+    return ContentType::APPLICATION_7Z;
 
   if (contentTypeStr == "application/msword")
-    return
-        ContentType::APPLICATION_WORD;
+    return ContentType::APPLICATION_WORD;
   if (contentTypeStr ==
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    return
-        ContentType::APPLICATION_WORD_XML;
+    return ContentType::APPLICATION_WORD_XML;
   if (contentTypeStr == "application/vnd.ms-excel")
-    return
-        ContentType::APPLICATION_EXCEL;
+    return ContentType::APPLICATION_EXCEL;
   if (contentTypeStr ==
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    return
-        ContentType::APPLICATION_EXCEL_XML;
+    return ContentType::APPLICATION_EXCEL_XML;
   if (contentTypeStr == "application/vnd.ms-powerpoint")
-    return
-        ContentType::APPLICATION_POWERPOINT;
+    return ContentType::APPLICATION_POWERPOINT;
   if (contentTypeStr ==
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-    return
-        ContentType::APPLICATION_POWERPOINT_XML;
+      "application/"
+      "vnd.openxmlformats-officedocument.presentationml.presentation")
+    return ContentType::APPLICATION_POWERPOINT_XML;
 
   if (contentTypeStr == "application/xhtml+xml")
-    return
-        ContentType::APPLICATION_XHTML;
+    return ContentType::APPLICATION_XHTML;
   if (contentTypeStr == "application/rss+xml")
-    return
-        ContentType::APPLICATION_RSS;
+    return ContentType::APPLICATION_RSS;
   if (contentTypeStr == "application/atom+xml")
-    return
-        ContentType::APPLICATION_ATOM;
+    return ContentType::APPLICATION_ATOM;
   if (contentTypeStr == "text/event-stream")
-    return
-        ContentType::TEXT_EVENT_STREAM;
+    return ContentType::TEXT_EVENT_STREAM;
 
   return ContentType::UNKNOWN;
 }
@@ -603,7 +581,8 @@ inline ContentType getContentTypeFromFilename(const std::string& filename) {
     // Default to binary if no extension
   }
 
-  // Extract the extension and convert to lowercase for case-insensitive matching
+  // Extract the extension and convert to lowercase for case-insensitive
+  // matching
   std::string extension = filename.substr(dotPos + 1);
   std::transform(extension.begin(), extension.end(), extension.begin(),
                  ::tolower);
@@ -653,8 +632,7 @@ inline ContentType getContentTypeFromFilename(const std::string& filename) {
   if (extension == "zip") return ContentType::APPLICATION_ZIP;
   if (extension == "rar") return ContentType::APPLICATION_RAR;
   if (extension == "gz" || extension == "gzip")
-    return
-        ContentType::APPLICATION_GZIP;
+    return ContentType::APPLICATION_GZIP;
   if (extension == "tar") return ContentType::APPLICATION_TAR;
   if (extension == "7z") return ContentType::APPLICATION_7Z;
 
@@ -675,13 +653,13 @@ inline ContentType getContentTypeFromFilename(const std::string& filename) {
 }
 
 // Optional: Overloaded version that works with file paths
-inline ContentType
-getContentTypeFromFilename(const std::string& filepath, bool) {
+inline ContentType getContentTypeFromFilename(const std::string& filepath,
+                                              bool) {
   // Extract filename from full path
   size_t lastSlashPos = filepath.find_last_of("/\\");
   std::string filename = (lastSlashPos == std::string::npos)
-                           ? filepath
-                           : filepath.substr(lastSlashPos + 1);
+                             ? filepath
+                             : filepath.substr(lastSlashPos + 1);
 
   return getContentTypeFromFilename(filename);
 }
@@ -708,4 +686,4 @@ inline bool isTextFile(const ContentType type) {
       return false;
   }
 }
-} // namespace httpxx
+}  // namespace httpxx

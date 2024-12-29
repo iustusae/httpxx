@@ -1,17 +1,18 @@
 #pragma once
-#include "http_objects.hh"
 #include <functional>
 #include <string>
 #include <unordered_map>
+
+#include "http_objects.hh"
 
 using handler_t = std::function<httpxx::Response(httpxx::Request)>;
 
 namespace httpxx {
 struct Router {
-private:
+ private:
   std::unordered_map<std::string, handler_t> endpoints;
 
-public:
+ public:
   void add_endpoint(const std::string& path,
                     const handler_t&& handler_function);
 
@@ -19,4 +20,4 @@ public:
 
   void init();
 };
-} // namespace httpxx
+}  // namespace httpxx

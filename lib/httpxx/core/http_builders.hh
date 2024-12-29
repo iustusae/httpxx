@@ -2,12 +2,10 @@
 
 #include "http_enums.hh"
 #include "http_objects.hh"
-#include <optional>
 
 namespace httpxx::http {
 struct ResponseBuilder {
-  ResponseBuilder() : built_response(Response{}) {
-  }
+  ResponseBuilder() : built_response(Response{}) {}
 
   auto setContentType(ContentType ct) -> ResponseBuilder& {
     this->setHeader("Content-Type", contentTypeToString(ct));
@@ -19,8 +17,8 @@ struct ResponseBuilder {
     return *this;
   }
 
-  auto setStartLine(float http_version,
-                    StatusCodes status_code) -> ResponseBuilder& {
+  auto setStartLine(float http_version, StatusCodes status_code)
+      -> ResponseBuilder& {
     built_response.start_line = {http_version, status_code};
     return *this;
   }
@@ -29,8 +27,8 @@ struct ResponseBuilder {
     return this->setStartLine(1.1, status_code);
   }
 
-  auto setHeader(const std::string& header,
-                 const std::string& value) -> ResponseBuilder& {
+  auto setHeader(const std::string& header, const std::string& value)
+      -> ResponseBuilder& {
     built_response.hd[header] = value;
     return *this;
   }
@@ -49,12 +47,9 @@ struct ResponseBuilder {
     return *this;
   }
 
+  auto build() -> Response { return built_response; }
 
-  auto build() -> Response {
-    return built_response;
-  }
-
-private:
+ private:
   Response built_response{};
 };
-} // namespace httpxx::http
+}  // namespace httpxx::http

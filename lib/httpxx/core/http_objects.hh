@@ -1,17 +1,20 @@
 #pragma once
 
-#include "http_enums.hh"
-#include "http_headers.hh"
 #include <iostream>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-namespace httpxx {
-constexpr std::string_view HTTP_VERSION{"HTTP/0.1"};
+#include "http_enums.hh"
+#include "http_headers.hh"
 
-// TODO: Apparently this is a "fold expression" to help with pattern matching, so we can assign every variant type to a function. Interesting, gotta learn more.
+namespace httpxx {
+constexpr std::string_view HTTP_VERSION{"HTTP/1.1"};
+
+// TODO: Apparently this is a "fold expression" to help with pattern matching,
+// so we can assign every variant type to a function. Interesting, gotta learn
+// more.
 template <class... Ts>
 struct overload : Ts... {
   using Ts::operator()...;
@@ -30,7 +33,7 @@ struct RequestLine {
   float http_version{};
 };
 
-inline std::ostream &operator<<(std::ostream &out, const RequestLine &rl) {
+inline std::ostream& operator<<(std::ostream& out, const RequestLine& rl) {
   out << "RequestLine {" << rl.method << ", " << rl.uri << ", "
       << rl.http_version << "}";
 
@@ -38,15 +41,19 @@ inline std::ostream &operator<<(std::ostream &out, const RequestLine &rl) {
 }
 
 struct Request {
+  using parameter_t = std::unordered_map<std::string, std::string>;
   RequestLine request_line{};
   Headers headers;
   std::optional<Body> body;
+  parameter_t req_parameters{};
 
   explicit Request(RequestLine request_line, Headers headers,
-                   const std::optional<Body>& body)
-    : request_line(std::move(request_line)), headers(std::move(headers)),
-      body(body) {
-  }
+                   const std::optional<Body>& body,
+                   const parameter_t& parameters)
+      : request_line(std::move(request_line)),
+        headers(std::move(headers)),
+        body(body),
+        req_parameters(parameters) {}
 
   Request() = default;
 
@@ -76,8 +83,7 @@ struct Response {
     std::ostringstream oss{};
 
     // Start line
-    oss << std::format("HTTP/{} {} {}\r\n",
-                       start_line.http_version,
+    oss << std::format("HTTP/{} {} {}\r\n", start_line.http_version,
                        static_cast<int>(start_line.status_code),
                        +start_line.status_code);
 
@@ -94,13 +100,12 @@ struct Response {
 
   // Utility method to get body as string
   std::string getBodyAsString() const {
-    return std::visit(overload{
-                          [](std::monostate) { return std::string{}; },
-                          [](const std::string& str) { return str; },
-                          [](const std::vector<char>& vec) {
-                            return std::string(vec.begin(), vec.end());
-                          }
-                      }, response_body);
+    return std::visit(overload{[](std::monostate) { return std::string{}; },
+                               [](const std::string& str) { return str; },
+                               [](const std::vector<char>& vec) {
+                                 return std::string(vec.begin(), vec.end());
+                               }},
+                      response_body);
   }
 };
-} // namespace httpxx
+}  // namespace httpxx
