@@ -1,8 +1,10 @@
 #pragma once
-#include "../core/http_handlers.hh"
-#include "../core/router.hh"
-#include "opts.hh"
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <strings.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <atomic>
 #include <cassert>
 #include <cerrno>
@@ -12,25 +14,23 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
-#include <netinet/in.h>
 #include <queue>
 #include <source_location>
 #include <stdexcept>
 #include <string_view>
-#include <strings.h>
-#include <sys/socket.h>
 #include <thread>
-#include <unistd.h>
 
+#include "../core/http_handlers.hh"
+#include "../core/router.hh"
+#include "opts.hh"
 
 namespace httpx {
 class httpxSocketException : public std::exception {
   const std::string_view _message;
 
-public:
+ public:
   explicit httpxSocketException(const std::string_view message)
-    : _message(message) {
-  }
+      : _message(message) {}
 
   [[nodiscard]] const char* what() const noexcept override {
     return _message.data();
@@ -41,17 +41,17 @@ class Socket {
   using SocketOptionValue = const int;
   using Port = in_port_t;
 
-private:
-  [[nodiscard]] static int
-  init_socket(AddressFamilies domain, SocketType type,
-              Protocol protocol = Protocol::ip) noexcept(false);
+ private:
+  [[nodiscard]] static int init_socket(
+      AddressFamilies domain, SocketType type,
+      Protocol protocol = Protocol::ip) noexcept(false);
 
-private:
+ private:
   int _fd{};
   AddressFamilies _af{};
   struct sockaddr_in server_addr{};
 
-public:
+ public:
   auto SetSocketOption(SocketOptions option, SocketOptionValue option_value) {
     const int opt =
         setsockopt(_fd, as_integer(SocketLevel::sol_socket), as_integer(option),
@@ -63,14 +63,17 @@ public:
               "[httpx::Socket::SetSocketOption] The file "
               "descriptor is not valid.");
         case EFAULT:
-          throw httpxSocketException("[httpx::Socket::SetSocketOption] The "
+          throw httpxSocketException(
+              "[httpx::Socket::SetSocketOption] The "
               "function screwed up and didnt give a "
               "valid adress space for opt_val");
         case EINVAL:
-          throw httpxSocketException("[httpx::Socket::SetSocketOption] "
+          throw httpxSocketException(
+              "[httpx::Socket::SetSocketOption] "
               "sizeof(option_value) is invalid.");
         case ENOPROTOOPT:
-          throw httpxSocketException("[httpx::Socket::SetSocketOption] The "
+          throw httpxSocketException(
+              "[httpx::Socket::SetSocketOption] The "
               "option is unknown at the indicated level.");
         case ENOTSOCK:
           throw httpxSocketException(
@@ -87,7 +90,8 @@ public:
             std::source_location location = std::source_location()) -> void {
     server_addr.sin_port = htons(port);
     if (ip_address.empty()) {
-      server_addr.sin_addr.s_addr = INADDR_ANY; // Bind to any available address
+      server_addr.sin_addr.s_addr =
+          INADDR_ANY;  // Bind to any available address
     } else {
       // Convert IP address to network format
       if (inet_pton(AF_INET, ip_address.c_str(), &server_addr.sin_addr) <= 0) {
@@ -167,21 +171,25 @@ public:
           throw httpxSocketException(
               "[httpx::Socket::Accept] EMFILE: Too many open file descriptors");
         case ENFILE:
-          throw httpxSocketException("[httpx::Socket::Accept] ENFILE: "
+          throw httpxSocketException(
+              "[httpx::Socket::Accept] ENFILE: "
               "System-wide limit on open files reached");
         case ENOBUFS:
         case ENOMEM:
-          throw httpxSocketException("[httpx::Socket::Accept] ENOBUFS/ENOMEM: "
+          throw httpxSocketException(
+              "[httpx::Socket::Accept] ENOBUFS/ENOMEM: "
               "Insufficient memory or buffer space");
         case ENOTSOCK:
           throw httpxSocketException(
-              "[httpx::Socket::Accept] ENOTSOCK: Invalid socket file descriptor");
+              "[httpx::Socket::Accept] ENOTSOCK: Invalid socket file "
+              "descriptor");
         case EOPNOTSUPP:
           throw httpxSocketException(
               "[httpx::Socket::Accept] EOPNOTSUPP: Unsupported socket type");
         case EPERM:
           throw httpxSocketException(
-              "[httpx::Socket::Accept] EPERM: Firewall or security restrictions");
+              "[httpx::Socket::Accept] EPERM: Firewall or security "
+              "restrictions");
         case EPROTO:
           throw httpxSocketException(
               "[httpx::Socket::Accept] EPROTO: Protocol error");
@@ -226,13 +234,13 @@ public:
     }
   }
 
-public:
+ public:
   Socket() = default;
 
   Socket(const AddressFamilies af, const SocketType type,
          const Protocol protocol)
-    : _fd(init_socket(af, type, protocol)), _af(af) {
+      : _fd(init_socket(af, type, protocol)), _af(af) {
     std::clog << "_fd: " << _fd << std::endl;
   }
 };
-} // namespace httpx
+}  // namespace httpx

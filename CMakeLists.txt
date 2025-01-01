@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.29)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
-set(CMAKE_CXX_FLAGS "-O3")
+set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -Wpedantic")
 
 project(
@@ -20,3 +20,6 @@ add_executable(server src/main.cc
 
 target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 target_link_libraries(server PUBLIC httpxx)
+
+find_package(fmt CONFIG REQUIRED)
+target_link_libraries(server PRIVATE fmt::fmt-header-only)

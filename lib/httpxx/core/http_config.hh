@@ -17,13 +17,13 @@ struct Config {
 
   Config(const in_port_t port, std::string www_path) : _port(port) {
     httpxx_assert(std::filesystem::exists(www_path),
-                  std::format("{} does not exist.", www_path));
+                  fmt::format("{} does not exist.", www_path));
     _www_path = std::move(www_path);
   }
 
   static Config fromFile(const std::string& path) {
     httpxx_assert(std::filesystem::exists(path) == true,
-                  std::format("File '{}' does not exist", path));
+                  fmt::format("File '{}' does not exist", path));
 
     toml::table table = toml::parse_file(path);
     Config config{};
@@ -33,7 +33,7 @@ struct Config {
 
     httpxx_assert(
         std::filesystem::exists(config._www_path),
-        std::format("www_path '{}' does not exist", config._www_path));
+        fmt::format("www_path '{}' does not exist", config._www_path));
 
     return config;
   }

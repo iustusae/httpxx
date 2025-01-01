@@ -8,7 +8,6 @@ include_directories(httpxx/util)
 include_directories(../include)
 add_library(httpxx STATIC ${HTTPX_SOURCES}
         ../include/tomlpp.hh
-        httpxx/v2/core/response.h
 )
 
 target_include_directories(httpxx PUBLIC httpxx/util)

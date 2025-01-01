@@ -1,9 +1,12 @@
 #pragma once
 
+#include <fmt/format.h>
+
 #include <iostream>
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "http_enums.hh"
@@ -83,7 +86,7 @@ struct Response {
     std::ostringstream oss{};
 
     // Start line
-    oss << std::format("HTTP/{} {} {}\r\n", start_line.http_version,
+    oss << fmt::format("HTTP/{} {} {}\r\n", start_line.http_version,
                        static_cast<int>(start_line.status_code),
                        +start_line.status_code);
 

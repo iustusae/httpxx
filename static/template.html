@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  {% block head %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block description %}{% endblock %}">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>{% block title %}{% endblock %} - My Website</title>
+  {% endblock %}
+</head>
+
+<body>
+  <header>
+    {% block header %}
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </nav>
+    {% endblock %}
+  </header>
+
+  <main>
+    <div id="content">
+      {% block content %}
+      <!-- Main content goes here -->
+      {% endblock %}
+    </div>
+
+    <aside>
+      {% block sidebar %}
+      <div class="widget">
+        <p>Please <a href="/login">log in</a></p>
+      </div>
+      {% endblock %}
+    </aside>
+  </main>
+
+  <footer>
+    {% block footer %}
+    <div class="footer-content">
+      <p>&copy; {{ current_year }} . All rights reserved.</p>
+    </div>
+    {% endblock %}
+  </footer>
+
+  {% block scripts %}
+  <script src="/js/main.js"></script>
+  {% endblock %}
+</body>
+
+</html>

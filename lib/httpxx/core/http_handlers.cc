@@ -1,10 +1,12 @@
 #include "http_handlers.hh"
 
+#include <fmt/format.h>
 #include <unistd.h>
 
 #include <cstring>
 #include <filesystem>
 #include <sstream>
+#include <variant>
 
 #include "http_builders.hh"
 #include "http_config.hh"
@@ -80,7 +82,7 @@ inline Request createRequest(const char* _request_string) {
 
     for (const auto& param : split_params) {
       auto pvp = split(param, "=");
-      std::clog << "pvp: " << std::format("{}, {}", pvp.at(0), pvp.at(1))
+      std::clog << "pvp: " << fmt::format("{}, {}", pvp.at(0), pvp.at(1))
                 << '\n';
       req_parms.insert({pvp.at(0), pvp.at(1)});
     }
@@ -184,7 +186,7 @@ void handle_request(const httpxx::Router& router, const Config& config,
     Response res{};
     if (req.requestsFile()) {
       res = serve_file(
-          std::format("{}{}", config._www_path, req.request_line.uri));
+          fmt::format("{}{}", config._www_path, req.request_line.uri));
     } else {
       res = router.get_handler_fn(req.request_line.uri)(req);
     }

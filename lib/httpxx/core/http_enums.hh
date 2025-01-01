@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <ostream>
 #include <string>
@@ -13,8 +14,6 @@ enum class HttpMethod {
   DELETE,
   http_method_count,
 };
-
-
 
 inline std::ostream& operator<<(std::ostream& out, const HttpMethod method) {
   switch (method) {
