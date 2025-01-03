@@ -1,14 +1,15 @@
-# httpxx: A Simple HTTP/1.1 Server in C++23
+# httpxx: A Simple HTTP/1.1 Server in C++20
 
-`httpxx` is a simple HTTP/1.1 server implementation written in modern C++23. The server is capable of serving static files, handling various endpoints, and responding with JSON data. It provides a basic framework for building custom HTTP servers in C++ with minimal dependencies.
+`httpxx` is a simple HTTP/1.1 server implementation written in modern C++20. The server can serve static files, handle API endpoints, render templates, and respond with JSON data. It provides a basic framework for building custom HTTP servers in C++ with minimal dependencies.
 
-This project is mostly incomplete but functional, and it's designed to be easy to extend with additional functionality.
+This project is functional but still evolving and is designed to be easy to extend with additional functionality.
 
 ## Features
 
-- Serve static files like HTML, CSS, JS, and images.
-- Handle custom API endpoints that can return JSON, HTML, or other content.
-- Basic routing and endpoint handling.
+- Serve static files (HTML, CSS, JS, images).
+- Handle custom API endpoints with various HTTP methods (GET, POST).
+- Support rendering templates using `inja` (a modern C++ template engine).
+- Return JSON responses using `nlohmann::json`.
 - Configurable server via a `config.toml` file.
 
 ## Example Usage
@@ -23,53 +24,112 @@ Below is a simple example of how to set up and use the `httpxx` server.
 #include <httpxx/core/http_objects.hh>
 #include <httpxx/server/Server.hh>
 #include <httpxx/wrapper/net.hh>
+#include <inja/inja.hpp>
+#include <nlohmann/json_fwd.hpp>
 
-int main(int argc, char* argv[]) {
-  // Load configuration from a TOML file
-  const auto app = Config::fromFile("../config.toml");
+#include "httpxx/core/http_enums.hh"
 
-  // Create a router to define endpoints
+int main(void) {
+  const auto app = Config::fromFile("./config.toml");
   httpxx::Router router;
+  inja::Environment env{};
 
-  // Serve static file at root endpoint
-  router.add_endpoint("/", [&](int client_fd, const httpxx::Request& request) {
-    return httpxx::handlers::serve_file(
-        std::format("{}/index.html", app._www_path));
-  });
+  // Example of GET and POST request handling
+  router.add_endpoint(
+      "/endpoint", {httpxx::HttpMethod::GET, httpxx::HttpMethod::POST},
+      [](const httpxx::Request& req) {
+        switch (req.request_line.method) {
+          case httpxx::HttpMethod::GET:
+            return httpxx::http::ResponseBuilder{}
+                .setStatusCode(httpxx::StatusCodes::OK)
+                .setContentType(httpxx::ContentType::TEXT_PLAIN)
+                .setBody("Oh, a GET request!")
+                .build();
+          case httpxx::HttpMethod::POST:
+            return httpxx::http::ResponseBuilder{}
+                .setStatusCode(httpxx::StatusCodes::OK)
+                .setContentType(httpxx::ContentType::TEXT_PLAIN)
+                .setBody(std::format("<h1>Oh, a POST request!<h1>. {}",
+                                     req.body.value_or("request has no body")))
+                .build();
+          default:
+            return httpxx::http::ResponseBuilder{}
+                .set_json_body(
+                    nlohmann::json::parse(fmt::format(
+                        "{{\"error\": \"Method {} is not allowed on URI {}\"}}",
+                        +req.request_line.method, req.request_line.uri)),
+                    httpxx::StatusCodes::METHOD_NOT_ALLOWED)
+                .build();
+        }
+      });
 
-  // Handle custom JSON endpoint
-  router.add_endpoint("/jason", [&](int client_fd, const httpxx::Request& request) {
-    const std::string json_data = R"({
+  // Serve static HTML file
+  router.add_endpoint("/", {httpxx::HttpMethod::GET},
+                      [&](const httpxx::Request& request) {
+                        return httpxx::handlers::serve_file(
+                            std::format("{}/index.html", app._www_path));
+                      });
+
+  // Example of URL parameters and template rendering with Inja
+  router.add_endpoint(
+      "/param_test/", {httpxx::HttpMethod::GET},
+      [&](const httpxx::Request& request) {
+        httpxx_assert(not request.req_parameters.empty(), "Missing parameters!");
+
+        inja::json data = request.req_parameters;
+
+        try {
+          std::string rendered = inja::render(
+              "<h1>Hello!<h1> <br> <p>Your full name is {{ name }} {{ surname }}</p>",
+              data);
+          return httpxx::http::ResponseBuilder{}
+              .setStatusCode(httpxx::StatusCodes::OK)
+              .setContentType(httpxx::ContentType::TEXT_HTML)
+              .setBody(rendered)
+              .build();
+        } catch (const inja::RenderError& e) {
+          return httpxx::http::ResponseBuilder{}
+              .setStatusCode(httpxx::StatusCodes::OK)
+              .setBody("<h1>Error rendering template</h1>")
+              .build();
+        }
+      });
+
+  // Serve JSON data
+  router.add_endpoint(
+      "/jason", {httpxx::HttpMethod::GET}, [&](const httpxx::Request& request) {
+        const std::string json_data = R"({
         "string_id": "unique12345",
         "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
         "metadata": {
             "author": "John Doe",
             "created_at": "2024-12-01T10:00:00Z"
+        },
+        "properties": {
+            "length": 350,
+            "encoding": "UTF-8"
         }
     })";
-    auto res = httpxx::http::ResponseBuilder{}
-               .setStatusCode(httpxx::StatusCodes::OK)
-               .setContentType(httpxx::ContentType::APPLICATION_JSON)
-               .setBody(json_data)
-               .build();
-    return res;
-  });
+        return httpxx::http::ResponseBuilder{}
+            .set_json_body(nlohmann::json::parse(json_data))
+            .build();
+      });
 
-  // Handle echo endpoint
-  router.add_endpoint("/echo", {[](const int& cfd, const httpxx::Request& req) {
-    return httpxx::http::ResponseBuilder{}
-           .setStatusCode(httpxx::StatusCodes::OK)
-           .setHeader("Content-Type", "text/html")
-           .setBody(req.body.value_or(""))
-           .build();
-  }});
+  // Echo request body
+  router.add_endpoint("/echo", {httpxx::HttpMethod::GET},
+                      {[](const httpxx::Request& req) {
+                        return httpxx::http::ResponseBuilder{}
+                            .setStatusCode(httpxx::StatusCodes::OK)
+                            .setHeader("Content-Type", "text/html")
+                            .setBody(req.body.value_or(""))
+                            .build();
+                      }});
+
+  std::clog << std::format("Server started at: http://localhost:{}, serving from {}",
+                           app._port, app._www_path)
+            << '\n';
 
   // Start the server
-  std::clog << std::format("server at: http://localhost:{}, www_path = {}",
-                           app._port, app._www_path)
-      << '\n';
-
-  // Start the HTTP server
   httpxx::Server{router, app}.start();
 }
 ```
@@ -77,35 +137,42 @@ int main(int argc, char* argv[]) {
 ### Description of Example
 
 1. **Configuration File**:
-    - The server reads its configuration from a TOML file (e.g., `config.toml`). You can specify various parameters, such as the port number and the file directory for serving static content.
+    - The server reads configuration settings from a TOML file (e.g., `config.toml`), which allows you to specify the port number and the directory path for static content.
 
 2. **Endpoints**:
-    - The server has a root endpoint (`/`) that serves an `index.html` file from the configured `www_path`.
-    - Another endpoint (`/jason`) responds with a JSON object, including some placeholder text and metadata.
-    - The `/echo` endpoint simply echoes the request body back in the response, useful for testing.
+    - The root endpoint (`/`) serves an `index.html` file from the `www_path`.
+    - The `/endpoint` endpoint handles both GET and POST requests. For GET requests, it returns a simple string, while POST requests return HTML content.
+    - The `/param_test/` endpoint demonstrates handling URL parameters and using the `inja` template engine to render a custom message.
+    - The `/jason` endpoint returns a predefined JSON object.
+    - The `/echo` endpoint echoes the body of the incoming request.
 
 3. **Server**:
-    - The `httpxx::Server` is instantiated with a `Router` and the application configuration, then started with `.start()` to handle incoming requests.
+    - The `httpxx::Server` is instantiated with a `Router` and the application configuration, then started to handle incoming requests.
 
 ### Routing System
 
-- The `Router` object is used to define endpoints that respond to HTTP requests. The `add_endpoint()` method is used to add route handlers for different HTTP paths (e.g., `/`, `/jason`, `/echo`).
+The `Router` object is used to define endpoints for various HTTP methods (e.g., GET, POST). The `add_endpoint()` method is used to register these route handlers.
+
+### Template Rendering with Inja
+
+The `/param_test/` endpoint demonstrates how to parse request parameters and use the `inja` C++ template engine to render dynamic content based on user input.
 
 ### File Handling
 
-- The server uses `httpxx::handlers::serve_file()` to serve files like HTML and images. These files are read from the file system, and the server sends them as HTTP responses.
+The server can serve static files using `httpxx::handlers::serve_file()`, which reads the files from the file system and returns them as HTTP responses.
 
-### 1M Requests Benchmark using Apache Benchmark to get a simple TODO-List app with html, css and js
+### Dependencies
 
-![image](https://github.com/user-attachments/assets/db799b02-9571-4698-8d00-437b65d938ed)
+- `nlohmann_json` for handling JSON data.
+- `inja` for template rendering.
+- `fmt` for formatting strings.
 
-
-## Project Setup
+### Project Setup
 
 ### Prerequisites
 
-- C++23 compatible compiler (e.g., GCC 13 or later).
-- CMake 3.29 or later.
+- A C++20-compatible compiler (e.g., GCC 13 or later).
+- CMake 3
 - A TOML configuration file (`config.toml`) for server settings (e.g., port and file path).
 
 ### Build Instructions
@@ -113,7 +180,7 @@ int main(int argc, char* argv[]) {
 1. **Clone the repository**:
 
    ```bash
-   git clone [https://github.com/your-username/httpxx.git](https://github.com/iustusae/httpxx)
+   git clone https://github.com/your-username/httpxx.git
    cd httpxx
    ```
 
@@ -154,9 +221,9 @@ www_path = "/path/to/static/files"
 
 ### Dependencies:
 
-- `nlohmann_json`
-- `inja`
-
+- `nlohmann_json` for JSON handling.
+- `inja` for template rendering.
+- `fmt` for string formatting.
 
 Tests are located in the `tests/` directory.
 
