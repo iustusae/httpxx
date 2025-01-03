@@ -3,7 +3,7 @@
 #include <httpxx/core/http_objects.hh>
 #include <httpxx/server/Server.hh>
 #include <httpxx/wrapper/net.hh>
-#include <inja/inja.hpp>
+#include <include/inja.hpp>
 #include <nlohmann/json_fwd.hpp>
 
 #include "httpxx/core/http_enums.hh"
