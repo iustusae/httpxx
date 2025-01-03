@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "http_enums.hh"
 #include "http_objects.hh"
 
@@ -44,6 +46,14 @@ struct ResponseBuilder {
   auto setBinaryBody(const std::vector<char>& body) -> ResponseBuilder& {
     built_response.response_body = body;
     setContentLength(body.size());
+    return *this;
+  }
+
+  auto set_json_body(const nlohmann::json& json_body,
+                     const StatusCodes code = StatusCodes::OK) {
+    setContentType(ContentType::APPLICATION_JSON);
+    setStatusCode(code);
+    setBody(json_body.dump());
     return *this;
   }
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -Wpedantic")
 
 project(
   httpx
-  VERSION 0.0.1
+  VERSION 1.0.0
   LANGUAGES CXX)
 enable_testing()
 include_directories(${CMAKE_SOURCE_DIR}/lib)

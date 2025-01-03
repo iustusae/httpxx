@@ -16,10 +16,11 @@ struct Router {
 
  public:
   void add_endpoint(const std::string& path,
-                    const std::initializer_list<HttpMethod>& accepted_methods,
+                    const std::vector<HttpMethod>& accepted_methods,
                     const handler_t&& handler_function);
 
   [[nodiscard]] handler_t get_handler_fn(const std::string& path) const;
+  [[nodiscard]] const Endpoint& get_endpoint(const std::string& path) const;
 
   void init();
 };

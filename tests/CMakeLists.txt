@@ -21,7 +21,6 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(httpxx_testing test_main.cpp
         tests/ConfigTest.h
-        tests/HttpObjects.h
 )
 target_link_libraries(httpxx_testing gtest gtest_main)
 include(GoogleTest)

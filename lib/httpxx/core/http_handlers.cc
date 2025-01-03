@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <filesystem>
+#include <nlohmann/json_fwd.hpp>
 #include <sstream>
 #include <variant>
 
@@ -12,6 +13,7 @@
 #include "http_config.hh"
 #include "http_headers.hh"
 #include "http_objects.hh"
+#include "httpxx/core/http_enums.hh"
 
 namespace httpxx {
 inline float extractHttpVersion(const std::string& http_version) {
@@ -179,6 +181,12 @@ auto serve_file(const std::filesystem::path& path) -> Response {
   }
 }
 
+inline std::ostream& operator<<(
+    std::ostream& out, const std::vector<httpxx::HttpMethod>& methods) {
+  std::copy(std::begin(methods), std::end(methods),
+            std::ostream_iterator<httpxx::HttpMethod>(std::cout, ","));
+  return out;
+}
 void handle_request(const httpxx::Router& router, const Config& config,
                     int client_fd, const char* buffer) {
   try {
@@ -187,8 +195,25 @@ void handle_request(const httpxx::Router& router, const Config& config,
     if (req.requestsFile()) {
       res = serve_file(
           fmt::format("{}{}", config._www_path, req.request_line.uri));
+
     } else {
-      res = router.get_handler_fn(req.request_line.uri)(req);
+      auto ep = router.get_endpoint(req.request_line.uri);
+      auto method = req.request_line.method;
+      if (std::ranges::find(ep.accepted_methods, method) ==
+          std::end(ep.accepted_methods)) {
+        std::clog << "method " << +req.request_line.method << " not in "
+                  << ep.accepted_methods << "\n";
+        res =
+            http::ResponseBuilder{}
+                .set_json_body(
+                    nlohmann::json::parse(fmt::format(
+                        "{{\"error\": \"Method {} is not allowed on URI {}\"}}",
+                        +req.request_line.method, req.request_line.uri)),
+                    StatusCodes::METHOD_NOT_ALLOWED)
+                .build();
+      } else {
+        res = ep.handler(req);
+      }
     }
     response_write(res, client_fd);
     close(client_fd);

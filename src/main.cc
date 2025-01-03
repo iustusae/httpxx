@@ -4,13 +4,44 @@
 #include <httpxx/server/Server.hh>
 #include <httpxx/wrapper/net.hh>
 #include <inja/inja.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 #include "httpxx/core/http_enums.hh"
 
 int main(void) {
-  const auto app = Config::fromFile("../config.toml");
+  const auto app = Config::fromFile("./config.toml");
   httpxx::Router router;
   inja::Environment env{};
+
+  router.add_endpoint(
+      "/endpoint", {httpxx::HttpMethod::GET, httpxx::HttpMethod::POST},
+      [](const httpxx::Request& req) {
+        switch (req.request_line.method) {
+          case httpxx::HttpMethod::GET:
+            return httpxx::http::ResponseBuilder{}
+                .setStatusCode(httpxx::StatusCodes::OK)
+                .setContentType(httpxx::ContentType::TEXT_PLAIN)
+                .setBody("Oh, a GET request!")
+                .build();
+          case httpxx::HttpMethod::POST:
+            return httpxx::http::ResponseBuilder{}
+                .setStatusCode(httpxx::StatusCodes::OK)
+                .setContentType(httpxx::ContentType::TEXT_PLAIN)
+                .setBody(std::format("<h1>Oh, a POST request!<h1>. {}",
+                                     req.body.value_or("request has not body")))
+                .build();
+          default:
+
+            return httpxx::http::ResponseBuilder{}
+                .set_json_body(
+                    nlohmann::json::parse(fmt::format(
+                        "{{\"error\": \"Method {} is not allowed on URI {}\"}}",
+                        +req.request_line.method, req.request_line.uri)),
+                    httpxx::StatusCodes::METHOD_NOT_ALLOWED)
+                .build();
+        }
+      });
+
   router.add_endpoint("/", {httpxx::HttpMethod::GET},
                       [&](const httpxx::Request& request) {
                         return httpxx::handlers::serve_file(
@@ -89,9 +120,7 @@ int main(void) {
         }
     })";
         auto res = httpxx::http::ResponseBuilder{}
-                       .setStatusCode(httpxx::StatusCodes::OK)
-                       .setContentType(httpxx::ContentType::APPLICATION_JSON)
-                       .setBody(json_data)
+                       .set_json_body(nlohmann::json::parse(json_data))
                        .build();
 
         return res;
