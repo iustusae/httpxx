@@ -2,9 +2,18 @@
 
 `httpxx` is a lightweight HTTP/1.1 server implementation written in modern C++20. It enables serving static files, handling custom API endpoints, rendering templates, and returning JSON responses. The project is designed to be simple, extensible, and easy to integrate into your own C++ applications.
 
+## Dependencies
+
+- `nlohmann_json` for JSON handling.
+- `fmt` for formatting strings.
+- `inja` for template rendering (bundled already in `include/inja.hpp`).
+- `tomlpp` for template rendering (bundled already in `include/tomlpp.hpp`).
+- C++20-compatible compiler.
+
+
 ## Features
 
-- Serve static files (HTML, CSS, JS, images).
+- Serve static files (HTML, CSS, JS, images and videos).
 - Handle custom API endpoints with support for multiple HTTP methods (GET, POST).
 - Render dynamic content using the `inja` C++ template engine.
 - Return structured data as JSON using `nlohmann::json`.
@@ -166,12 +175,7 @@ The `/param_test` endpoint shows how to use the `inja` template engine to render
 
 The server can serve static files such as HTML, CSS, and JavaScript using `httpxx::FileServer::serveFile()`.
 
-## Dependencies
 
-- `nlohmann_json` for JSON handling.
-- `inja` for template rendering.
-- `fmt` for formatting strings.
-- C++20-compatible compiler (e.g., GCC 13 or later).
 
 ## Configuration File Example (`config.toml`)
 
