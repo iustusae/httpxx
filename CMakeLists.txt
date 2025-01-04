@@ -7,6 +7,10 @@ set(CMAKE_CXX_COMPILER /usr/bin/g++)
 set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -Wpedantic")
 
+if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+endif()
+
 project(
   httpxx
   VERSION 2.0.0
