@@ -1,7 +1,7 @@
 #include <httpxx/configuration.hh>
 #include <httpxx/request_handlers.hh>
 #include <httpxx/router.hh>
-#include <inja/inja.hpp>
+#include <include/inja.hpp>
 #include <nlohmann/json.hpp>
 
 #include "httpxx/server.hh"
