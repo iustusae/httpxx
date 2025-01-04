@@ -1,9 +1,5 @@
-//
-// Created by iustus on 12/6/24.
-//
+#pragma once
 
-#ifndef HTTPXX_ASSERT_H
-#define HTTPXX_ASSERT_H
 #include <fmt/format.h>
 
 #include <iostream>
@@ -11,6 +7,7 @@
 #include <source_location>
 #include <string_view>
 
+namespace httpxx {
 inline void httpxx_assert(
     bool expected, const std::string_view message,
     const std::source_location& location = std::source_location::current()) {
@@ -20,5 +17,4 @@ inline void httpxx_assert(
             << message << std::endl;
   std::abort();
 }
-
-#endif  // HTTPXX_ASSERT_H
+}  // namespace httpxx

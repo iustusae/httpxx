@@ -8,18 +8,19 @@ set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -Wpedantic")
 
 project(
-  httpx
-  VERSION 1.0.0
+  httpxx
+  VERSION 2.0.0
   LANGUAGES CXX)
 enable_testing()
-include_directories(${CMAKE_SOURCE_DIR}/lib)
-add_subdirectory(${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/lib/build)
-add_subdirectory(${CMAKE_SOURCE_DIR}/tests ${CMAKE_SOURCE_DIR}/tests/build)
-add_executable(server src/main.cc
+include_directories(${CMAKE_SOURCE_DIR}/lib/v2)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/lib/v2 ${CMAKE_SOURCE_DIR}/lib/v2/build)
+
+add_executable(example example/main.cc
        )
 
-target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-target_link_libraries(server PUBLIC httpxx)
+target_include_directories(example PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/v2)
+target_link_libraries(example PUBLIC httpxx_v2)
 
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(server PRIVATE fmt::fmt-header-only)
+target_link_libraries(example PRIVATE fmt::fmt-header-only)

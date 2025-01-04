@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>TaskMaster</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <video width="800" height="600" controls>
+    <source src="lewl.mp4" type="video/mp4">
+  </video>
+
+  <div id="app">
+    <header>
+      <h1>TaskMaster</h1>
+      <div class="add-task-section">
+        <input type="text" id="taskInput" placeholder="Enter a new task...">
+        <select id="prioritySelect">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <button id="addTaskBtn">Add Task</button>
+      </div>
+    </header>
+    <main>
+      <section id="taskList" class="task-list"></section>
+    </main>
+    <footer>
+      <div class="stats">
+        <span id="totalTasks">Total Tasks: 0</span>
+        <span id="completedTasks">Completed: 0</span>
+      </div>
+    </footer>
+  </div>
+
+  <a href="assets/about.html">about</a>
+  <script src="js/index.js"></script>
+</body>
+
+</html>
