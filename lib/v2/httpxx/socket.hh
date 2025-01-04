@@ -167,7 +167,8 @@ inline auto Socket::Listen(const httpxx::Router& router,
       continue;
     }
     std::jthread{&httpxx::RequestHandler::handle, router, config, client_fd,
-                 buffer};
+                 buffer}
+        .detach();
   }
 }
 [[nodiscard]] inline int Socket::init_socket(
