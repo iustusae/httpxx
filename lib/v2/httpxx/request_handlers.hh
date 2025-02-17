@@ -38,7 +38,7 @@ class HttpUtils {
     tokens.emplace_back(str.substr(start));
 
     for (auto& token : tokens) {
-      auto it = std::find_if(token.begin(), token.end(), [](unsigned char ch) {
+      auto it = std::ranges::find_if(token, [](const unsigned char ch) {
         return !std::isspace(ch);
       });
       token.erase(token.begin(), it);

@@ -94,49 +94,50 @@ class ResponseBuilder {
     return ResponseBuilder().status(StatusCodes::NOT_FOUND);
   }
 
-  ResponseBuilder& status(const StatusCodes code) {
+  [[nodiscard]] ResponseBuilder& status(const StatusCodes code) {
     response.status_code = code;
     return *this;
   }
 
-  ResponseBuilder& header(const std::string& key, const std::string& value) {
+  [[nodiscard]] ResponseBuilder& header(const std::string& key,
+                                        const std::string& value) {
     response.headers[std::move(key)] = std::move(value);
     return *this;
   }
 
-  ResponseBuilder& contentType(const std::string type) {
+  [[nodiscard]] ResponseBuilder& contentType(const std::string type) {
     return header("Content-Type", std::move(type));
   }
 
-  ResponseBuilder& contentType(const ContentType type) {
+  [[nodiscard]] ResponseBuilder& contentType(const ContentType type) {
     return header("Content-Type", contentTypeToString(type));
   }
 
-  ResponseBuilder& body(const std::string& content) {
+  [[nodiscard]] ResponseBuilder& body(const std::string& content) {
     response.body = content;
     setContentLength(content.length());
     return *this;
   }
 
-  ResponseBuilder& body(const std::vector<char>& content) {
+  [[nodiscard]] ResponseBuilder& body(const std::vector<char>& content) {
     response.body = std::move(content);
     setContentLength(std::get<std::vector<char>>(response.body).size());
     return *this;
   }
 
-  ResponseBuilder& body(const char* content) {
+  [[nodiscard]] ResponseBuilder& body(const char* content) {
     return body(std::string(content));
   }
 
-  ResponseBuilder& json(const nlohmann::json& content) {
+  [[nodiscard]] ResponseBuilder& json(const nlohmann::json& content) {
     return contentType("application/json").body(content.dump());
   }
 
-  ResponseBuilder& text(const std::string& content) {
+  [[nodiscard]] ResponseBuilder& text(const std::string& content) {
     return contentType("text/plain").body(content);
   }
 
-  ResponseBuilder& html(const std::string& content) {
+  [[nodiscard]] ResponseBuilder& html(const std::string& content) {
     return contentType("text/html").body(content);
   }
 
