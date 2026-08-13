@@ -4,3 +4,4 @@ build/
 cmake*/
 cmake_install*
 CMake*/
+example/perf.data*
