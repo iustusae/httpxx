@@ -1,163 +1,60 @@
 # httpxx
 
-A C++20 HTTP/1.1 server library with routing, static file serving, and templated response rendering.
+minimal c++ http server. header-only core under `lib/v2/httpxx/`, built with meson.
 
----
+## what it does
 
-## Overview
+parses raw http/1.1 bytes off a tcp socket, routes to a handler, builds a response, sends it back.
 
-httpxx is a framework for building HTTP/1.1 servers in C++20. It exposes a declarative routing API where paths and methods are bound to handler functions. Handlers receive a parsed request object and return a response — plain text, HTML, JSON, or template-rendered HTML.
+## deps
 
-The repository is split into two parts: the `lib/v2/httpxx` library, which is the active implementation, and an `example/` application that demonstrates the full request lifecycle against a real configuration and static content directory. A deprecated predecessor exists under `lib/deprecated/` and is not the active API target.
+- toml++ - vendored, parses config.toml
+- inja - vendored, template rendering
+- nlohmann_json + fmt - system deps, json + formatting in the handlers
 
----
-
-## Architecture
-
-Incoming connections are accepted by the socket layer, which constructs a `Request` object from the raw HTTP stream. The `Server` dispatches that object through the `Router`, which matches against registered `Endpoint` definitions by path and method. The matched handler executes, produces a `Response`, and the socket layer serializes it back to the client.
-
-```
-client
-  └── socket (network I/O)
-        └── Request (parsed HTTP model)
-              └── Router (path + method dispatch)
-                    └── Endpoint / Handler
-                          ├── static files (filesystem)
-                          ├── JSON (nlohmann_json)
-                          └── templates (inja)
-```
-
-Configuration is a startup-time concern. The `Server` is constructed with a `Router` and a `Configuration` loaded from `config.toml`. There are no per-request configuration dependencies.
-
----
-
-## Dependencies
-
-**External** — must be present on the build system:
-
-| Dependency | Purpose |
-|---|---|
-| `nlohmann_json` | JSON response serialization |
-| `fmt` | String formatting |
-
-**Vendored** — included in `lib/v2/include/`:
-
-| Dependency | Purpose |
-|---|---|
-| `inja` | Server-side HTML template rendering |
-| `tomlpp` | TOML configuration parsing |
-
----
-
-## Building
-
-httpxx uses [Meson](https://mesonbuild.com). The library and example application are separate build targets.
-
-```sh
+## build
+``` bash
 meson setup build
-cd build
-ninja
+meson compile -C build
 ```
+root build pulls in the v2 lib build and builds the example app against it.
 
-To build only the library:
+## run
 
-```sh
-meson setup build --buildtype=release
-ninja -C build httpxx
-```
+./example_server.sh
 
-Requires a C++20-capable compiler and the external dependencies listed above to be findable by the build system.
+reads example/config.toml, spins up the server, serves whatever endpoints main.cc registered plus static files off example/static/.
 
----
+## how a request actually flows
 
-## Configuration
+tcp client sends raw http/1.1 bytes, socket parses it into a request object, server hands it to the router, router matches method/path against a registered endpoint, endpoint calls its handler, handler builds a response (json via nlohmann_json/fmt, a rendered inja template, or a static file), response gets serialized back through the socket, client gets bytes back.
 
-The example application reads its runtime settings from `example/config.toml`. At minimum this controls the server address, port, and the path from which static files are served.
+## roadmap
 
-```toml
-# example/config.toml
-host = "127.0.0.1"
-port = 8080
-www_path = "example/static"
-```
+not in order of "cool factor," in order of what actually has to happen first.
 
-`Configuration` is parsed at startup via the vendored `tomlpp` and passed directly to the `Server` constructor. It is not reloaded at runtime.
+### separation of concerns
+- `socket.hh` right now mixes raw transport (send/recv) with http/1.1 framing. split those. transport layer shouldnt know or care what protocol is riding on top of it — this is the actual blocker for http/2, not a nice-to-have.
+- `request_handlers.hh` is doing three jobs: response building, json serialization, template rendering, static file serving. split into a thin handler api + pluggable renderers (json, inja, static-file) behind one common response-writing interface.
+- keep toml++ parsing isolated from `configuration.hh`'s in-memory model. dont let the parser leak into the rest of the codebase.
 
----
+### tests
+- unit tests per component: socket/parsing (malformed requests, partial reads, chunked bodies), router matching (method/path edge cases), config parsing.
+- integration test that spins up the example server and hits it over real sockets, not mocked.
+- fuzz the http/1.1 parser once its split out of the transport layer. thats the part thatll actually get hit with garbage input in the wild.
 
-## Usage
+### http/2
+- needs the socket/framing split above done first. h2 is a binary framing layer over the same transport, not a rewrite of the transport.
+- build order: binary framing → hpack header compression → stream multiplexing. dont try to do all three at once.
+- tls is basically mandatory here too, real clients wont negotiate h2 over plaintext outside internal testing. need alpn for the protocol upgrade.
 
-```cpp
-#include <httpxx/server.hh>
-#include <httpxx/router.hh>
-#include <httpxx/configuration.hh>
+### async i/o
+- current model reads like blocking/synchronous per the arch. h2 multiplexing barely matters if one connection blocks the thread. look at epoll (or io_uring if going linux-only) before or alongside the h2 work, not after.
 
-int main() {
-    auto config = httpxx::Configuration::from_file("config.toml");
-    httpxx::Router router;
+### robustness
+- keep-alive / connection reuse for http/1.1 — not clear if this exists yet, check before assuming.
+- timeouts on slow/idle connections. malformed requests shouldnt take the server down.
+- graceful shutdown.
 
-    router.get("/", [](const httpxx::Request& req) {
-        return httpxx::Response::html("<h1>hello</h1>");
-    });
-
-    router.get("/api/status", [](const httpxx::Request& req) {
-        return httpxx::Response::json({ {"status", "ok"} });
-    });
-
-    router.post("/submit", [](const httpxx::Request& req) {
-        // handle request body
-        return httpxx::Response::text("received");
-    });
-
-    httpxx::Server server(router, config);
-    server.run();
-}
-```
-
-Handlers return typed responses. The library supports four response shapes:
-
-| Factory | Content-Type |
-|---|---|
-| `Response::text(...)` | `text/plain` |
-| `Response::html(...)` | `text/html` |
-| `Response::json(...)` | `application/json` |
-| `Response::render(template, data)` | `text/html` via inja |
-
-Static files are served by registering a route that reads from the configured `www_path`. The example application shows this pattern in full.
-
----
-
-## Project Structure
-
-```
-httpxx/
-├── lib/
-│   ├── v2/
-│   │   ├── httpxx/          # active library headers and implementation
-│   │   │   ├── server.hh
-│   │   │   ├── router.hh
-│   │   │   ├── endpoint.hh
-│   │   │   ├── request_handlers.hh
-│   │   │   ├── configuration.hh
-│   │   │   ├── objects.hh
-│   │   │   ├── enums.hh
-│   │   │   ├── socket.hh
-│   │   │   ├── socket_enums.hh
-│   │   │   └── httpxx_assert.hh
-│   │   ├── include/         # vendored dependencies (inja, tomlpp)
-│   │   └── meson.build
-│   └── deprecated/          # previous architecture, not the active API
-├── example/
-│   ├── main.cc              # example application entry point
-│   ├── config.toml          # runtime configuration
-│   └── static/              # static assets served by the example app
-└── meson.build
-```
-
-The `lib/deprecated/` tree is retained for reference. It has its own internal layout but is not compiled as part of the primary build target.
-
----
-
-## License
-
-See `LICENSE`.
+### benchmarks
+- throughput/latency under load, before and after each phase above. the whole pitch of this project is "no framework bloat"
